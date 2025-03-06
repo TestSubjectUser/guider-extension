@@ -3,16 +3,91 @@
   <head>
     <title>Popup</title>
     <style>
-      /* Simple styling for the popup */
-      button {
-        padding: 10px;
-        font-size: 16px;
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        /* min-height: 100vh; */
+        min-height: 250px;
+        background-color: #f3f4f6;
+        margin: 0;
+        font-family: Arial, sans-serif;
+      }
+      .container {
+        background-color: white;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        padding: 24px;
+        max-width: 400px;
+        width: 275px;
+      }
+      .header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 16px;
+      }
+      .header img {
+        margin-right: 8px;
+      }
+      .header h1 {
+        font-size: 18px;
+        font-weight: 600;
+        color: #2d3748;
+        margin: 0;
+      }
+      .title {
+        font-size: 20px;
+        font-weight: 600;
+        color: #2d3748;
+        margin-bottom: 8px;
+      }
+      .description {
+        color: #4a5568;
+        margin-bottom: 16px;
+      }
+      .button-primary {
+        width: 100%;
+        background-color: #ff5a3c;
+        color: white;
+        padding: 12px;
+        border: none;
+        border-radius: 4px;
+        margin-bottom: 8px;
         cursor: pointer;
+        font-size: 16px;
+      }
+      .button-secondary {
+        width: 100%;
+        background-color: #edf2f7;
+        color: #2d3748;
+        padding: 12px;
+        border: 1px solid #cbd5e0;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
       }
     </style>
   </head>
   <body>
-    <button id="showDivButton">Show Custom Div</button>
+    <div class="container">
+      <div class="header">
+        <img
+          src="https://storage.googleapis.com/a1aa/image/96OrDO6kv4Edjyqb1gIrvIqbKWSwI-V9R__KgolZZtw.jpg"
+          alt="HubSpot logo"
+          width="24"
+          height="24"
+        />
+        <h1>Guide Creator</h1>
+      </div>
+      <h2 class="title">Hey there, Adam</h2>
+      <p class="description">
+        Start capturing your new guide. We’ll track every step, then you can add
+        the finishing touches and share it.
+      </p>
+      <button id="showDivButton" class="button-primary">Start capturing</button>
+      <button class="button-secondary">Go to dashboard</button>
+    </div>
+    <!-- <button id="showDivButton">Show Custom Div</button> -->
     <script src="scripts/popup.js"></script>
   </body>
 </html>

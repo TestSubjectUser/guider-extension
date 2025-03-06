@@ -1,33 +1,107 @@
 function appendCustomDiv() {
-  if (document.getElementById("custom-div")) {
+  if (document.getElementById("control-panel")) {
     return;
   }
 
   const newDiv = document.createElement("div");
 
-  newDiv.id = "custom-div";
+  newDiv.id = "control-panel";
   newDiv.style.cssText = `
-    position: fixed;
-    bottom: 20px;
-    left: 20px;
-    padding: 10px;
-    background-color: green;
-    border-radius: 8px;
-    z-index: 9999;
-  `;
+  display: flex;
+  align-items: center;
+  background-color: white;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 10px;
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  z-index: 9999;
+`;
 
-  const closeButton = document.createElement("button");
-  closeButton.innerHTML = "&#10005;";
-  closeButton.style.cssText = `
-    position: absolute;
-    top: 10px;
-    right: 10px;
+  const createButton = (text) => {
+    const button = document.createElement("button");
+    button.style.cssText = `
+    display: flex;
+    align-items: center;
+    margin-right: 10px;
+    color: #4a5568;
     background: transparent;
     border: none;
-    font-size: 20px;
-    color: #fff;
     cursor: pointer;
+    transition: color 0.3s;
   `;
+    button.onmouseover = () => {
+      button.style.color = "#2d3748";
+      button.style.backgroundColor = "#edf2f7";
+    };
+    button.onmouseout = () => {
+      button.style.color = "#4a5568";
+      button.style.backgroundColor = "transparent";
+    };
+
+    const span = document.createElement("span");
+    span.textContent = text;
+
+    button.appendChild(span);
+
+    return button;
+  };
+
+  // DONE - button
+  const checkIcon = document.createElement("button");
+  checkIcon.style.cssText = `
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background-color: #f56565;
+  border-radius: 50%;
+  margin-right: 10px;
+  `;
+  checkIcon.onmouseover = () => {
+    checkIcon.style.backgroundColor = "#f05656";
+  };
+  checkIcon.onmouseout = () => {
+    checkIcon.style.backgroundColor = "#f56565";
+  };
+  checkIcon.innerText = "Done";
+  checkIcon.style.color = "white";
+
+  newDiv.appendChild(checkIcon);
+  newDiv.appendChild(createButton("Pause"));
+  newDiv.appendChild(createButton("Restart"));
+  const closeButton = createButton(" X ");
+  // newDiv.appendChild(createButton("Cancel"));
+
+  document.body.appendChild(newDiv);
+  // const newDiv = document.createElement("div");
+
+  // newDiv.id = "custom-div";
+  // newDiv.style.cssText = `
+  //   position: fixed;
+  //   bottom: 20px;
+  //   left: 20px;
+  //   padding: 10px;
+  //   background-color: green;
+  //   border-radius: 8px;
+  //   z-index: 9999;
+  // `;
+
+  // const closeButton = document.createElement("button");
+  // closeButton.innerHTML = "X";
+  // closeButton.style.cssText = `
+  //   position: absolute;
+  //   top: 3px;
+  //   right: 7px;
+  //   background: transparent;
+  //   border: none;
+  //   font-size: 15px;
+  //   color: black;
+  //   cursor: pointer;
+  //   z-index: 10000;
+  // `;
 
   closeButton.addEventListener("click", () => {
     document.body.removeChild(newDiv);
@@ -37,9 +111,9 @@ function appendCustomDiv() {
 
   newDiv.appendChild(closeButton);
 
-  const textContent = document.createElement("span");
-  textContent.innerHTML = "This is a custom div added to the webpage's body!";
-  newDiv.appendChild(textContent);
+  // const textContent = document.createElement("span");
+  // textContent.innerHTML = "This is a custom div added to the webpage's body!";
+  // newDiv.appendChild(textContent);
 
   document.body.appendChild(newDiv);
 
@@ -58,6 +132,11 @@ function appendCustomDiv() {
 // }
 
 function handleMouseClick(event) {
+  const controlPanel = document.getElementById("control-panel");
+  if (controlPanel && controlPanel.contains(event.target)) {
+    return;
+  }
+
   const x = event.clientX;
   const y = event.clientY;
   console.log(`Mouse clicked at coordinates: X: ${x}, Y: ${y}`);
