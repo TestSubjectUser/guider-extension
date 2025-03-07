@@ -235,7 +235,7 @@ function appendCustomDiv() {
 
     const controlPanel = document.getElementById("control-panel");
     console.log("Captured Data: ", Data);
-    // sendToBackend(Data);
+    sendToBackend(Data);
     if (controlPanel) {
       document.body.removeChild(newDiv);
     }
@@ -317,15 +317,34 @@ async function handleMouseClick(event) {
     // sendToBackend(data);
 
     setTimeout(() => {
-      if (targetUrl) {
+      if (typeof targetUrl !== "undefined" && targetUrl) {
         window.location.href = targetUrl;
       }
+      // else {
+      //   console.warn("skipping redirecsn");
+      // }
     }, 1000);
   });
 }
 
 function sendToBackend(data) {
-  // console.log("Sending data to backend...");
+  console.log("Sending data to backend...");
+
+  return new Promise((resolve, reject) => {
+    chrome.runtime.sendMessage(
+      { action: "postimages", data: data },
+      (response) => {
+        if (chrome.runtime.lastError) {
+          console.error("Runtime Error:", chrome.runtime.lastError);
+          reject(chrome.runtime.lastError);
+        } else {
+          console.log("Response received from background.js:", response);
+          resolve(response); // Resolve with the response from background.js
+        }
+      }
+    );
+  });
+
   // console.log(data);
   // STORE IN LOCAL STORAGE
   // localStorage.setItem("capturedData", JSON.stringify(data));
