@@ -69,13 +69,12 @@ function appendCustomDiv() {
   checkIcon.innerText = "Done";
   checkIcon.style.color = "white";
 
-  newDiv.appendChild(checkIcon);
-  newDiv.appendChild(createButton("Pause"));
-  newDiv.appendChild(createButton("Restart"));
+  const pauseButton = createButton("Pause");
+  const restartButton = createButton("Restart");
   const closeButton = createButton(" X ");
   // newDiv.appendChild(createButton("Cancel"));
 
-  document.body.appendChild(newDiv);
+  // document.body.appendChild(newDiv);
   // const newDiv = document.createElement("div");
 
   // newDiv.id = "custom-div";
@@ -109,6 +108,9 @@ function appendCustomDiv() {
     disableMouseTracking();
   });
 
+  newDiv.appendChild(checkIcon);
+  newDiv.appendChild(pauseButton);
+  newDiv.appendChild(restartButton);
   newDiv.appendChild(closeButton);
 
   // const textContent = document.createElement("span");
