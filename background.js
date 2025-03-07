@@ -1,4 +1,18 @@
-// will give - Base64 Image String
+const LOCATION_ENDPOINT = "http://localhost:3000/api";
+
+console.log("Background script is running...");
+function fetchStatus() {
+  console.log("fetchStatus called...");
+  fetch(LOCATION_ENDPOINT)
+    // .then((response) => response.json())
+    .then((data) => {
+      console.log("data: ", data);
+    })
+    .catch((error) => {
+      console.error("Fetch error: ", error);
+    });
+}
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "captureScreenshot") {
     chrome.tabs.captureVisibleTab(null, { format: "png" }, (screenshotUrl) => {
@@ -11,6 +25,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     });
     // Return true to indicate that the response will be sent asynchronously
     return true;
+  }
+  if (message.action === "fetchStatus") {
+    console.log("Calling fetchStatus...");
+    fetchStatus();
   }
 
   // for development purposes

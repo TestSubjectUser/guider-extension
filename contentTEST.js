@@ -146,6 +146,7 @@
 // });
 
 // CLEANED CODE
+const api = "http://localhost:3000/api";
 let Data = [];
 let isTracking = false;
 
@@ -227,9 +228,14 @@ function appendCustomDiv() {
 
   checkIcon.addEventListener("click", () => {
     disableMouseTracking();
+
+    chrome.runtime.sendMessage({
+      action: "fetchStatus",
+    });
+
     const controlPanel = document.getElementById("control-panel");
     console.log("Captured Data: ", Data);
-    sendToBackend(Data);
+    // sendToBackend(Data);
     if (controlPanel) {
       document.body.removeChild(newDiv);
     }
@@ -263,7 +269,14 @@ function appendCustomDiv() {
   enableMouseTracking();
 }
 
-function handleMouseClick(event) {
+async function handleMouseClick(event) {
+  // try {
+  //   const response = await fetch(`${api}`);
+  //   console.log("response: ", response);
+  // } catch (error) {
+  //   console.log("error: ", error);
+  // }
+
   const controlPanel = document.getElementById("control-panel");
   if (controlPanel && controlPanel.contains(event.target)) {
     return;
@@ -288,11 +301,11 @@ function handleMouseClick(event) {
   event.preventDefault();
   chrome.runtime.sendMessage({ action: "captureScreenshot" }, (response) => {
     const screenshotUrl = response.screenshotUrl;
-    chrome.runtime.sendMessage({
-      action: "openRenderTab",
-      screenshotUrl: screenshotUrl,
-      clickCoordinates: { x: relativeX, y: relativeY },
-    });
+    // chrome.runtime.sendMessage({
+    //   action: "openRenderTab",
+    //   screenshotUrl: screenshotUrl,
+    //   clickCoordinates: { x: relativeX, y: relativeY },
+    // });
     const data = {
       mouseCoordinates: { x, y },
       pageSize: { width: pageWidth, height: pageHeight },
@@ -314,10 +327,8 @@ function handleMouseClick(event) {
 function sendToBackend(data) {
   // console.log("Sending data to backend...");
   // console.log(data);
-
   // STORE IN LOCAL STORAGE
-  localStorage.setItem("capturedData", JSON.stringify(data));
-
+  // localStorage.setItem("capturedData", JSON.stringify(data));
   // fetch("http://localhost:3000/api/saveData", {
   //   method: "POST",
   //   headers: {

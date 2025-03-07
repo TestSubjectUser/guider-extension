@@ -2,9 +2,9 @@
   "name": "Hello Extensions",
   "description": "Base Level Extension",
   "permissions": ["activeTab", "tabs", "storage", "clipboardWrite"],
-  "host_permissions": ["http://*/*", "https://*/*"],
+  "host_permissions": ["http://*/*", "https://*/*", "http://localhost:3000/*"],
   "background": {
-    "service_worker": "./scripts/background.js"
+    "service_worker": "background.js"
   },
   "version": "1.0",
   "manifest_version": 3,
