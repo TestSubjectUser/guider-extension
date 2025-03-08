@@ -229,6 +229,7 @@ function appendCustomDiv() {
   const badge = document.createElement("span");
   badge.textContent = badgeCount;
   badge.className = "button__badge";
+  badge.id = "button__badge";
   badge.style.cssText = `
   background-color: #d94e4e;
   border-radius: 50%;
@@ -273,14 +274,17 @@ function appendCustomDiv() {
   });
 
   closeButton.addEventListener("click", () => {
+    badgeCount = 0;
+    Data = [];
+    document.getElementById("button__badge").style.display = "none";
     document.body.removeChild(newDiv);
     disableMouseTracking();
   });
   restartButton.addEventListener("click", () => {
-    badgeCount++;
-    badge.textContent = badgeCount;
-    badge.style.display = "inline-block"; // Show badge when count > 0
+    badgeCount = 0;
     Data = [];
+    // document.getElementById("button__badge").textContent = badgeCount;
+    document.getElementById("button__badge").style.display = "none";
   });
   pauseButton.addEventListener("click", () => {
     if (isTracking) {
@@ -303,9 +307,6 @@ function appendCustomDiv() {
 }
 
 async function handleMouseClick(event) {
-  badgeCount++;
-  document.getElementById("button__badge").style.display = "inline-block";
-  document.getElementById("button__badge").textContent = badgeCount;
   // document.getElementById("done__button__id").addEventListener("click", () => {
   // })
   // try {
@@ -363,6 +364,10 @@ async function handleMouseClick(event) {
     };
     // TO LOCAL ARRAY
     if (Data.length < 5) {
+      badgeCount++;
+      // console.log("badgeCount: ", badgeCount);
+      document.getElementById("button__badge").textContent = badgeCount;
+      document.getElementById("button__badge").style.display = "inline-block";
       console.log("Added to array");
       Data.push(data);
     } else {
