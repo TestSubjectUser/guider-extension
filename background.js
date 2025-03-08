@@ -16,7 +16,7 @@ function fetchStatus() {
 async function postData(data) {
   console.log("sending image data...");
   try {
-    const response = await fetch("http://localhost:3000/api/save-screenshot", {
+    const response = await fetch(`${LOCATION_ENDPOINT}/save-screenshot`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
@@ -39,6 +39,15 @@ async function postData(data) {
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === "redirectToDashboard") {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs.length > 0 && tabs[0].id) {
+        chrome.tabs.update(tabs[0].id, {
+          url: `${LOCATION_ENDPOINT}/dashboard`,
+        });
+      }
+    });
+  }
   if (message.action === "captureScreenshot") {
     chrome.tabs.captureVisibleTab(null, { format: "png" }, (screenshotUrl) => {
       if (chrome.runtime.lastError) {

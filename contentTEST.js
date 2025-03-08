@@ -149,6 +149,7 @@
 const api = "http://localhost:3000/api";
 let Data = [];
 let isTracking = false;
+let badgeCount = 0;
 
 function appendCustomDiv() {
   if (document.getElementById("control-panel")) {
@@ -203,6 +204,8 @@ function appendCustomDiv() {
 
   // DONE - button
   const checkIcon = document.createElement("button");
+  checkIcon.id = "done__button__id";
+
   checkIcon.style.cssText = `
     display: flex;
     align-items: center;
@@ -212,6 +215,8 @@ function appendCustomDiv() {
     background-color: #f56565;
     border-radius: 50%;
     margin-right: 10px;
+    position: relative;
+    color: white;
     `;
   checkIcon.onmouseover = () => {
     checkIcon.style.backgroundColor = "#f05656";
@@ -220,8 +225,33 @@ function appendCustomDiv() {
     checkIcon.style.backgroundColor = "#f56565";
   };
   checkIcon.innerText = "Done";
-  checkIcon.style.color = "white";
 
+  const badge = document.createElement("span");
+  badge.textContent = badgeCount;
+  badge.className = "button__badge";
+  badge.style.cssText = `
+  background-color: #d94e4e;
+  border-radius: 50%;
+  color: white;
+  padding: 2px 2px;
+  font-size: 10px;
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  min-width: 16px;
+  min-height: 16px;
+  text-align: center;
+  display: none; /* Initially hidden */
+  font-weight: bold;
+  `;
+
+  // checkIcon.addEventListener("click", () => {
+  //   badgeCount++;
+  //   badge.textContent = badgeCount;
+  //   badge.style.display = "inline-block"; // Show badge when count > 0
+  // });
+
+  checkIcon.appendChild(badge);
   const pauseButton = createButton("Pause");
   const restartButton = createButton("Restart");
   const closeButton = createButton(" X ");
@@ -247,6 +277,9 @@ function appendCustomDiv() {
     disableMouseTracking();
   });
   restartButton.addEventListener("click", () => {
+    badgeCount++;
+    badge.textContent = badgeCount;
+    badge.style.display = "inline-block"; // Show badge when count > 0
     Data = [];
   });
   pauseButton.addEventListener("click", () => {
@@ -270,6 +303,11 @@ function appendCustomDiv() {
 }
 
 async function handleMouseClick(event) {
+  badgeCount++;
+  document.getElementById("button__badge").style.display = "inline-block";
+  document.getElementById("button__badge").textContent = badgeCount;
+  // document.getElementById("done__button__id").addEventListener("click", () => {
+  // })
   // try {
   //   const response = await fetch(`${api}`);
   //   console.log("response: ", response);

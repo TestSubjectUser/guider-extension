@@ -5,3 +5,6 @@ document.getElementById("showDivButton").addEventListener("click", () => {
     chrome.tabs.sendMessage(tabs[0].id, { action: "showDiv" });
   });
 });
+document.getElementById("goToDashboard").addEventListener("click", () => {
+  chrome.runtime.sendMessage({ action: "redirectToDashboard" });
+});
