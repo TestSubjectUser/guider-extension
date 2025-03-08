@@ -60,6 +60,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     postData(message.data)
       .then((response) => {
         // console.log("postData response:", response);
+        if (response.error) {
+          sendResponse({ success: false, data: response });
+        }
         sendResponse({ success: true, data: response });
       })
       .catch((error) => {

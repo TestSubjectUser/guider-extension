@@ -339,7 +339,9 @@ function sendToBackend(data) {
           reject(chrome.runtime.lastError);
         } else {
           console.log("Response received from background.js:", response);
-          resolve(response); // Resolve with the response from background.js
+          window.location.href =
+            "http://localhost:3000" + response.data.urlToVists;
+          resolve(response);
         }
       }
     );
