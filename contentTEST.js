@@ -234,7 +234,7 @@ function appendCustomDiv() {
     });
 
     const controlPanel = document.getElementById("control-panel");
-    console.log("Captured Data: ", Data);
+    // console.log("Captured Data: ", Data);
     sendToBackend(Data);
     if (controlPanel) {
       document.body.removeChild(newDiv);
@@ -251,10 +251,10 @@ function appendCustomDiv() {
   });
   pauseButton.addEventListener("click", () => {
     if (isTracking) {
-      pauseButton.style.backgroundColor = "#f56565";
+      pauseButton.textContent = "PAUSED";
       disableMouseTracking();
     } else {
-      pauseButton.style.backgroundColor = "#fff";
+      pauseButton.textContent = "Pause";
       enableMouseTracking();
     }
   });
@@ -282,21 +282,31 @@ async function handleMouseClick(event) {
     return;
   }
 
+  const clickedElement = event.target;
+  let textOfClickedElement =
+    clickedElement.innerText || clickedElement.textContent || "";
+  if (textOfClickedElement.length > 15) {
+    textOfClickedElement = textOfClickedElement.slice(0, 15) + "...";
+  }
+  textOfClickedElement = textOfClickedElement.replace(/\n/g, " ");
+  // console.log("Text of clicked element:", textOfClickedElement);
+  textOfClickedElement = "clicked on " + textOfClickedElement;
+
   const x = event.clientX;
   const y = event.clientY;
-  console.log(`Mouse clicked at coordinates: X: ${x}, Y: ${y}`);
+  // console.log(`Mouse clicked at coordinates: X: ${x}, Y: ${y}`);
 
   const pageWidth = window.innerWidth;
   const pageHeight = window.innerHeight;
 
-  console.log(`Page size: Width: ${pageWidth}, Height: ${pageHeight}`);
+  // console.log(`Page size: Width: ${pageWidth}, Height: ${pageHeight}`);
 
   const relativeX = (x / pageWidth) * 100;
   const relativeY = (y / pageHeight) * 100;
 
-  console.log(
-    `Relative coordinates as percentage: X: ${relativeX}%, Y: ${relativeY}%`
-  );
+  // console.log(
+  //   `Relative coordinates as percentage: X: ${relativeX}%, Y: ${relativeY}%`
+  // );
 
   event.preventDefault();
   chrome.runtime.sendMessage({ action: "captureScreenshot" }, (response) => {
@@ -307,14 +317,19 @@ async function handleMouseClick(event) {
     //   clickCoordinates: { x: relativeX, y: relativeY },
     // });
     const data = {
-      mouseCoordinates: { x, y },
-      pageSize: { width: pageWidth, height: pageHeight },
+      // mouseCoordinates: { x, y },
+      // pageSize: { width: pageWidth, height: pageHeight },
+      title: textOfClickedElement,
       relativeCoordinates: { x: relativeX, y: relativeY },
       screenshotUrl: screenshotUrl,
     };
     // TO LOCAL ARRAY
-    Data.push(data);
-    // sendToBackend(data);
+    if (Data.length < 5) {
+      console.log("Added to array");
+      Data.push(data);
+    } else {
+      console.log("__Reached limit__");
+    }
 
     setTimeout(() => {
       if (typeof targetUrl !== "undefined" && targetUrl) {
