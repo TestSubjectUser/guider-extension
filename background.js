@@ -4,7 +4,6 @@ console.log("Background script is running...");
 function fetchStatus() {
   console.log("fetchStatus called...");
   fetch(LOCATION_ENDPOINT)
-    // .then((response) => response.json())
     .then((data) => {
       console.log("data: ", data);
     })
@@ -27,7 +26,6 @@ async function postData(data) {
     }
 
     const resData = await response.json();
-    // const res = await response.json();
     console.log("resData: ", resData);
     // console.log("response.body: ", JSON.stringify(resData.body));
 
@@ -57,7 +55,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       // Send the screenshot URL back to the content script
       sendResponse({ screenshotUrl });
     });
-    // Return true to indicate that the response will be sent asynchronously
     return true;
   }
   if (message.action === "fetchStatus") {
@@ -68,7 +65,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log("Calling postimages...");
     postData(message.data)
       .then((response) => {
-        // console.log("postData response:", response);
         if (response.error) {
           sendResponse({ success: false, data: response });
         }
@@ -79,7 +75,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse({ success: false, error: error.message });
       });
 
-    return true; // IMPORTANT: This keeps the connection open for async response
+    return true; //keeps the connection open for async response
   }
 
   // for development purposes

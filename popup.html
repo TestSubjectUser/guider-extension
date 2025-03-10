@@ -47,7 +47,7 @@
       }
       .button-primary {
         width: 100%;
-        background-color: #ff5a3c;
+        background-color: #f56565;
         color: white;
         padding: 12px;
         border: none;
@@ -56,28 +56,35 @@
         cursor: pointer;
         font-size: 16px;
       }
+      .button-primary:hover {
+        background-color: #f05656;
+      }
       .button-secondary {
         width: 100%;
-        background-color: #edf2f7;
+        background-color: transparent;
         color: #2d3748;
         padding: 12px;
-        border: 1px solid #cbd5e0;
+        border: none;
         border-radius: 4px;
         cursor: pointer;
         font-size: 16px;
+      }
+      .button-secondary:hover {
+        color: #2d3748;
+        background-color: #edf2f7;
       }
     </style>
   </head>
   <body>
     <div class="container">
       <div class="header">
-        <img src="icons/icon32.png" alt="guide logo" width="32" height="32" />
+        <img src="icons/icon32.png" alt="guide-logo" width="32" height="32" />
         <h1>Guide Creator</h1>
       </div>
       <h2 class="title">Hey there,</h2>
       <p class="description">
-        Start capturing your new guide. We’ll track every step, then you can add
-        the finishing touches and share it.
+        Start capturing your new guide. We&apos;ll track every step, then you
+        can add the finishing touches and share it.
       </p>
       <button id="showDivButton" class="button-primary">Start capturing</button>
       <button class="button-secondary" id="goToDashboard">

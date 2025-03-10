@@ -1,6 +1,6 @@
 {
-  "name": "Hello Extensions",
-  "description": "Base Level Extension",
+  "name": "Guider",
+  "description": "helps to navigate through tabs",
   "permissions": ["activeTab", "tabs", "storage", "clipboardWrite"],
   "host_permissions": ["http://*/*", "https://*/*", "http://localhost:3000/*"],
   "background": {

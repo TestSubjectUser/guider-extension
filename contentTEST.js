@@ -1,155 +1,59 @@
-// // Array to store clicked data
-// let clickedData = [];
-
-// function appendCustomDiv() {
-//   if (document.getElementById("control-panel")) {
-//     return;
-//   }
-
-//   const newDiv = document.createElement("div");
-
-//   newDiv.id = "control-panel";
-//   newDiv.style.cssText = `
-//     display: flex;
-//     align-items: center;
-//     background-color: white;
-//     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-//     border-radius: 8px;
-//     padding: 10px;
-//     position: fixed;
-//     bottom: 20px;
-//     left: 20px;
-//     z-index: 9999;
-//   `;
-
-//   const createButton = (text) => {
-//     const button = document.createElement("button");
-//     button.style.cssText = `
-//       display: flex;
-//       align-items: center;
-//       margin-right: 10px;
-//       color: #4a5568;
-//       background: transparent;
-//       border: none;
-//       cursor: pointer;
-//       transition: color 0.3s;
-//     `;
-//     button.onmouseover = () => {
-//       button.style.color = "#2d3748";
-//       button.style.backgroundColor = "#edf2f7";
-//     };
-//     button.onmouseout = () => {
-//       button.style.color = "#4a5568";
-//       button.style.backgroundColor = "transparent";
-//     };
-
-//     const span = document.createElement("span");
-//     span.textContent = text;
-
-//     button.appendChild(span);
-
-//     return button;
-//   };
-
-//   // DONE - button
-//   const checkIcon = document.createElement("button");
-//   checkIcon.style.cssText = `
-//     display: flex;
-//     align-items: center;
-//     justify-content: center;
-//     width: 40px;
-//     height: 40px;
-//     background-color: #f56565;
-//     border-radius: 50%;
-//     margin-right: 10px;
-//   `;
-//   checkIcon.onmouseover = () => {
-//     checkIcon.style.backgroundColor = "#f05656";
-//   };
-//   checkIcon.onmouseout = () => {
-//     checkIcon.style.backgroundColor = "#f56565";
-//   };
-//   checkIcon.innerText = "Done";
-//   checkIcon.style.color = "white";
-
-//   // Pause, restart, and close buttons
-//   const pauseButton = createButton("Pause");
-//   const restartButton = createButton("Restart");
-//   const closeButton = createButton(" X ");
-
-//   // Handle close button click
-//   closeButton.addEventListener("click", () => {
-//     document.body.removeChild(newDiv);
-//     disableMouseTracking();
-//   });
-
-//   // Append buttons to the control panel
-//   newDiv.appendChild(checkIcon);
-//   newDiv.appendChild(pauseButton);
-//   newDiv.appendChild(restartButton);
-//   newDiv.appendChild(closeButton);
-
-//   document.body.appendChild(newDiv);
-
-//   // Enable mouse tracking when the div is appended
-//   enableMouseTracking();
-
-//   // Add event listener for the "Done" button
-//   checkIcon.addEventListener("click", () => {
-//     console.log("Captured Data: ", clickedData);
-//     if (controlPanel) {
-//       return;
-//     }
-//   });
-// }
-
-// function handleMouseClick(event) {
-//   const controlPanel = document.getElementById("control-panel");
-//   if (controlPanel && controlPanel.contains(event.target)) {
-//     // return;
-
-//   }
-
-//   const x = event.clientX;
-//   const y = event.clientY;
-//   const pageWidth = window.innerWidth;
-//   const pageHeight = window.innerHeight;
-//   const relativeX = (x / pageWidth) * 100;
-//   const relativeY = (y / pageHeight) * 100;
-
-//   // Store the clicked data in the array
-//   clickedData.push({
-//     mouseCoordinates: { x, y },
-//     pageSize: { width: pageWidth, height: pageHeight },
-//     relativeCoordinates: { x: relativeX, y: relativeY },
-//   });
-
-//   console.log(`Mouse clicked at coordinates: X: ${x}, Y: ${y}`);
-//   console.log(`Relative coordinates as percentage: X: ${relativeX}%, Y: ${relativeY}%`);
-
-//   event.preventDefault();
-// }
-
-// function enableMouseTracking() {
-//   document.addEventListener("click", handleMouseClick);
-// }
-
-// function disableMouseTracking() {
-//   document.removeEventListener("click", handleMouseClick);
-// }
-
-// // Listen for messages to show the control panel
-// chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-//   if (message.action === "showDiv") {
-//     appendCustomDiv();
-//   }
-// });
-
-// CLEANED CODE
-const api = "http://localhost:3000/api";
+const API_URL = "http://localhost:3000";
 let Data = [];
 let isTracking = false;
 let badgeCount = 0;
+
+function createLoadingBackdrop() {
+  if (document.getElementById("loading-backdrop")) return;
+
+  const backdrop = document.createElement("div");
+  // backdrop.innerHTML = "Processing your images...";
+  backdrop.id = "loading-backdrop";
+  backdrop.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+  `;
+
+  const spinner = document.createElement("div");
+  spinner.style.cssText = `
+    width: 50px;
+    height: 50px;
+    border: 5px solid #ffffff;
+    border-top: 5px solid transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  `;
+
+  const style = document.createElement("style");
+  style.textContent = `
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  `;
+
+  document.head.appendChild(style);
+  backdrop.appendChild(spinner);
+  document.body.appendChild(backdrop);
+}
+
+function showLoadingBackdrop() {
+  createLoadingBackdrop();
+  document.getElementById("loading-backdrop").style.display = "flex";
+}
+
+function hideLoadingBackdrop() {
+  const backdrop = document.getElementById("loading-backdrop");
+  if (backdrop) backdrop.remove();
+}
 
 function appendCustomDiv() {
   if (document.getElementById("control-panel")) {
@@ -178,9 +82,8 @@ function appendCustomDiv() {
       display: flex;
       align-items: center;  
       margin-right: 10px;
-      color: #4a5568;
+      color:rgb(150, 150, 150);
       background: transparent;
-      background-color: #fff;
       border: none;
       cursor: pointer;
       transition: color 0.3s;
@@ -188,9 +91,10 @@ function appendCustomDiv() {
     button.onmouseover = () => {
       button.style.color = "#2d3748";
       button.style.backgroundColor = "#edf2f7";
+      button.style.borderRadius = "8px";
     };
     button.onmouseout = () => {
-      button.style.color = "#4a5568";
+      button.style.color = "rgb(150, 150, 150)";
       button.style.backgroundColor = "transparent";
     };
 
@@ -207,6 +111,7 @@ function appendCustomDiv() {
   checkIcon.id = "done__button__id";
 
   checkIcon.style.cssText = `
+    border: none;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -231,26 +136,19 @@ function appendCustomDiv() {
   badge.className = "button__badge";
   badge.id = "button__badge";
   badge.style.cssText = `
-  background-color: #d94e4e;
+  background-color: #f05656;
   border-radius: 50%;
   color: white;
-  padding: 2px 2px;
   font-size: 10px;
   position: absolute;
-  top: -7px;
-  right: -7px;
+  top: -3px;
+  right: -3px;
   min-width: 16px;
   min-height: 16px;
   text-align: center;
   display: none; /* Initially hidden */
   font-weight: bold;
   `;
-
-  // checkIcon.addEventListener("click", () => {
-  //   badgeCount++;
-  //   badge.textContent = badgeCount;
-  //   badge.style.display = "inline-block"; // Show badge when count > 0
-  // });
 
   checkIcon.appendChild(badge);
   const pauseButton = createButton("Pause");
@@ -260,16 +158,13 @@ function appendCustomDiv() {
   checkIcon.addEventListener("click", () => {
     disableMouseTracking();
 
-    chrome.runtime.sendMessage({
-      action: "fetchStatus",
-    });
+    chrome.runtime.sendMessage({ action: "fetchStatus" });
 
     const controlPanel = document.getElementById("control-panel");
     // console.log("Captured Data: ", Data);
     sendToBackend(Data);
-    if (controlPanel) {
-      document.body.removeChild(newDiv);
-    }
+    if (controlPanel) document.body.removeChild(newDiv);
+    badgeCount = 0;
     Data = [];
   });
 
@@ -307,29 +202,12 @@ function appendCustomDiv() {
 }
 
 async function handleMouseClick(event) {
-  // document.getElementById("done__button__id").addEventListener("click", () => {
-  // })
-  // try {
-  //   const response = await fetch(`${api}`);
-  //   console.log("response: ", response);
-  // } catch (error) {
-  //   console.log("error: ", error);
-  // }
-
   const controlPanel = document.getElementById("control-panel");
   if (controlPanel && controlPanel.contains(event.target)) {
     return;
   }
 
-  const clickedElement = event.target;
-  let textOfClickedElement =
-    clickedElement.innerText || clickedElement.textContent || "";
-  if (textOfClickedElement.length > 15) {
-    textOfClickedElement = textOfClickedElement.slice(0, 15) + "...";
-  }
-  textOfClickedElement = textOfClickedElement.replace(/\n/g, " ");
-  // console.log("Text of clicked element:", textOfClickedElement);
-  textOfClickedElement = "clicked on " + textOfClickedElement;
+  let textOfClickedElement = formatElementText(event.target);
 
   const x = event.clientX;
   const y = event.clientY;
@@ -337,15 +215,11 @@ async function handleMouseClick(event) {
 
   const pageWidth = window.innerWidth;
   const pageHeight = window.innerHeight;
-
   // console.log(`Page size: Width: ${pageWidth}, Height: ${pageHeight}`);
 
   const relativeX = (x / pageWidth) * 100;
   const relativeY = (y / pageHeight) * 100;
-
-  // console.log(
-  //   `Relative coordinates as percentage: X: ${relativeX}%, Y: ${relativeY}%`
-  // );
+  // console.log(`Relative coordinates as percentage: X: ${relativeX}%, Y: ${relativeY}%`);
 
   event.preventDefault();
   chrome.runtime.sendMessage({ action: "captureScreenshot" }, (response) => {
@@ -387,41 +261,29 @@ async function handleMouseClick(event) {
 
 function sendToBackend(data) {
   console.log("Sending data to backend...");
+  showLoadingBackdrop();
 
   return new Promise((resolve, reject) => {
-    chrome.runtime.sendMessage(
-      { action: "postimages", data: data },
-      (response) => {
-        if (chrome.runtime.lastError) {
-          console.error("Runtime Error:", chrome.runtime.lastError);
-          reject(chrome.runtime.lastError);
-        } else {
-          console.log("Response received from background.js:", response);
-          window.location.href =
-            "http://localhost:3000" + response.data.urlToVists;
-          resolve(response);
-        }
+    chrome.runtime.sendMessage({ action: "postimages", data }, (response) => {
+      if (chrome.runtime.lastError) {
+        console.error("Runtime Error:", chrome.runtime.lastError);
+        hideLoadingBackdrop();
+        return reject(chrome.runtime.lastError);
+      } else {
+        // console.log("Response received from background.js:", response);
+        // window.location.href = API_URL + response.data.urlToVists;
+        // resolve(response);
+        console.log("Response received from background.js:", response);
+        setTimeout(() => {
+          // window.location.href = API_URL + response.data.urlToVists;
+          const newTabUrl = API_URL + response.data.urlToVists;
+          window.open(newTabUrl, "_blank");
+        }, 1000);
+        hideLoadingBackdrop(); // Hide loading on success
+        resolve(response);
       }
-    );
+    });
   });
-
-  // console.log(data);
-  // STORE IN LOCAL STORAGE
-  // localStorage.setItem("capturedData", JSON.stringify(data));
-  // fetch("http://localhost:3000/api/saveData", {
-  //   method: "POST",
-  //   headers: {
-  //     "Content-Type": "application/json",
-  //   },
-  //   body: JSON.stringify(data),
-  // })
-  //   .then((response) => response.json())
-  //   .then((data) => {
-  //     console.log("Data saved successfully:", data);
-  //   })
-  //   .catch((error) => {
-  //     console.error("Error sending data:", error);
-  //   });
 }
 
 function enableMouseTracking() {
@@ -434,8 +296,13 @@ function disableMouseTracking() {
   document.removeEventListener("click", handleMouseClick);
 }
 
+function formatElementText(element) {
+  let text = element.innerText || element.textContent || "";
+  return text.length > 15
+    ? `Clicked on ${text.slice(0, 15).replace(/\n/g, " ")}...`
+    : `Clicked on ${text.replace(/\n/g, " ")}`;
+}
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === "showDiv") {
-    appendCustomDiv();
-  }
+  if (message.action === "showDiv") appendCustomDiv();
 });

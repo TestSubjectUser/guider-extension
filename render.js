@@ -21,16 +21,12 @@ function renderImageAndBubble(screenshotUrl, x, y) {
     const imageHeight = screenshotImage.naturalHeight;
 
     // Calculate the absolute X and Y positions based on the image's size
-    const absoluteX = (x / 100) * imageWidth; // Scale the percentage X position to pixel value
-    const absoluteY = (y / 100) * imageHeight; // Scale the percentage Y position to pixel value
+    const absoluteX = (x / 100) * imageWidth;
+    const absoluteY = (y / 100) * imageHeight;
 
-    // Add the bubble on top of the image at the calculated pixel coordinates
     const bubble = document.createElement("div");
     bubble.classList.add("bubble");
 
-    // Position the bubble at the calculated absolute pixel coordinates
-    // bubble.style.left = `${absoluteX - 25}px`; // Center the bubble at the click point
-    // bubble.style.top = `${absoluteY - 25}px`; // Center the bubble at the click point
     bubble.style.left = `${absoluteX - 25}px`; // Center the bubble at the click point
     bubble.style.top = `${absoluteY - 25}px`; // Center the bubble at the click point
 
@@ -38,12 +34,11 @@ function renderImageAndBubble(screenshotUrl, x, y) {
   };
 }
 
-// Listen for the message from content.js
+// Listen for : message from content.js
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.screenshotUrl && message.clickCoordinates) {
     const { screenshotUrl, clickCoordinates } = message;
 
-    // Render the image and bubble using the received data
     renderImageAndBubble(screenshotUrl, clickCoordinates.x, clickCoordinates.y);
   }
 });
