@@ -47,16 +47,47 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     });
   }
   if (message.action === "captureScreenshot") {
-    chrome.tabs.captureVisibleTab(null, { format: "png" }, (screenshotUrl) => {
-      if (chrome.runtime.lastError) {
-        console.error("Error capturing screenshot:", chrome.runtime.lastError);
-        return;
+    // ask to hide
+    chrome.tabs.sendMessage(
+      sender.tab.id,
+      { action: "hideControlPanel" },
+      () => {
+        chrome.tabs.captureVisibleTab(
+          null,
+          { format: "png" },
+          (screenshotUrl) => {
+            if (chrome.runtime.lastError) {
+              console.error(
+                "Error capturing screenshot:",
+                chrome.runtime.lastError
+              );
+              return;
+            }
+            // restore control panel by asking to content scr
+            setTimeout(() => {
+              chrome.tabs.sendMessage(sender.tab.id, {
+                action: "showControlPanel",
+              });
+            }, 300);
+            // Send the screenshot URL back to the content script
+            sendResponse({ screenshotUrl });
+          }
+        );
       }
-      // Send the screenshot URL back to the content script
-      sendResponse({ screenshotUrl });
-    });
+    );
     return true;
   }
+  // if (message.action === "captureScreenshot") {
+  //   chrome.tabs.captureVisibleTab(null, { format: "png" }, (screenshotUrl) => {
+  //     if (chrome.runtime.lastError) {
+  //       console.error("Error capturing screenshot:", chrome.runtime.lastError);
+  //       return;
+  //     }
+  //     // Send the screenshot URL back to the content script
+  //     sendResponse({ screenshotUrl });
+  //   });
+  //   return true;
+  // }
   if (message.action === "fetchStatus") {
     console.log("Calling fetchStatus...");
     fetchStatus();

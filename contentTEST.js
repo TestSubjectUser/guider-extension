@@ -304,5 +304,40 @@ function formatElementText(element) {
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === "hideControlPanel") {
+    console.log("Hiding control panel...");
+    const controlPanel = document.getElementById("control-panel");
+    if (controlPanel) {
+      controlPanel.style.display = "none";
+    }
+    sendResponse({ success: true });
+  }
+
+  if (message.action === "showControlPanel") {
+    console.log("Restoring control panel...");
+    const controlPanel = document.getElementById("control-panel");
+    if (controlPanel) {
+      controlPanel.style.display = "flex";
+    }
+  }
+});
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "showDiv") appendCustomDiv();
 });
+
+// Current - in screenshot collection each document carries
+/*
+ * relativeCoordinates: {x: 50, y: 50}
+ * screenshotUrl: "data:image/png;base64,iVBORw0KGgoA..."
+ * timestamp: 10 March 2025 at 13:34:27 UTC+5:30
+ * title: "Clicked on button"
+ */
+
+// Updated - return document id only
+// document carries
+/*
+ * guideTitle: "title of the guide"
+ * guideDescription: "description of the guide"
+ * guideImages: [title: "Clicked on button", description: "description", relativeCoordinates: {x: 50, y: 50}, screenshotUrl: "data:image/png;base64,iVBORw0KGgoA..."]
+ */
