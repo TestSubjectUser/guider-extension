@@ -162,6 +162,9 @@ function appendCustomDiv() {
 
     const controlPanel = document.getElementById("control-panel");
     // console.log("Captured Data: ", Data);
+    let currUrl = window.location.href;
+    currUrl = currUrl.split("://")[1] || currUrl;
+    Data.push({ urlWeAreOn: currUrl });
     sendToBackend(Data);
     if (controlPanel) document.body.removeChild(newDiv);
     badgeCount = 0;
