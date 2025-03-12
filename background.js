@@ -21,13 +21,13 @@ async function postData(data) {
       body: JSON.stringify(data),
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-
     const resData = await response.json();
+    if (!response.ok) {
+      throw new Error(
+        resData.error || `HTTP error! Status: ${response.status}`
+      );
+    }
     console.log("resData: ", resData);
-    // console.log("response.body: ", JSON.stringify(resData.body));
 
     return resData;
   } catch (error) {

@@ -204,6 +204,51 @@ function appendCustomDiv() {
   enableMouseTracking();
 }
 
+function showErrorPopup(errorMessage) {
+  // Remove existing popup if present
+  if (document.getElementById("error-popup")) return;
+
+  const popup = document.createElement("div");
+  popup.id = "error-popup";
+  popup.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color:rgb(239, 221, 221);
+    color:rgb(148, 39, 39);
+    padding: 15px;
+    border-radius: 5px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 10000;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+  `;
+
+  const message = document.createElement("span");
+  message.textContent = errorMessage;
+  message.style.flex = "1";
+
+  // const closeButton = document.createElement("button");
+  // closeButton.innerHTML = "&#10006;"; // Close (X) icon
+  // closeButton.style.cssText = `
+  //   background: none;
+  //   border: none;
+  //   color: white;
+  //   font-size: 16px;
+  //   margin-left: 10px;
+  //   cursor: pointer;
+  // `;
+  // closeButton.onclick = () => popup.remove();
+
+  popup.appendChild(message);
+  // popup.appendChild(closeButton);
+  document.body.appendChild(popup);
+
+  // Auto-hide after 5 seconds
+  setTimeout(() => popup.remove(), 5000);
+}
+
 async function handleMouseClick(event) {
   const controlPanel = document.getElementById("control-panel");
   if (controlPanel && controlPanel.contains(event.target)) {
@@ -249,6 +294,7 @@ async function handleMouseClick(event) {
       Data.push(data);
     } else {
       console.log("__Reached limit__");
+      showErrorPopup("You have reached the limit of 5 images");
     }
 
     setTimeout(() => {
@@ -269,7 +315,8 @@ function sendToBackend(data) {
   return new Promise((resolve, reject) => {
     chrome.runtime.sendMessage({ action: "postimages", data }, (response) => {
       if (chrome.runtime.lastError) {
-        console.error("Runtime Error:", chrome.runtime.lastError);
+        // console.error("Runtime Error:", chrome.runtime.lastError);
+        showErrorPopup("Runtime Error: " + chrome.runtime.lastError.message);
         hideLoadingBackdrop();
         return reject(chrome.runtime.lastError);
       } else {
@@ -277,11 +324,21 @@ function sendToBackend(data) {
         // window.location.href = API_URL + response.data.urlToVists;
         // resolve(response);
         console.log("Response received from background.js:", response);
-        setTimeout(() => {
-          // window.location.href = API_URL + response.data.urlToVists;
-          const newTabUrl = API_URL + response.data.urlToVists;
-          window.open(newTabUrl, "_blank");
-        }, 1000);
+
+        if (response.success) {
+          setTimeout(() => {
+            // window.location.href = API_URL + response.data.urlToVists;
+            const newTabUrl = API_URL + response.data.urlToVists;
+            window.open(newTabUrl, "_blank");
+          }, 1000);
+        } else {
+          showErrorPopup(response.data.message);
+          // console.error(
+          //   "Error in sending data to backend:",
+          //   response.data.message
+          // );
+        }
+        // TOD - ERROR POPUP
         hideLoadingBackdrop(); // Hide loading on success
         resolve(response);
       }
