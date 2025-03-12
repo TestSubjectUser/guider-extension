@@ -3,6 +3,94 @@ let Data = [];
 let isTracking = false;
 let badgeCount = 0;
 
+function customBackdrop(textMessage, seconds = 1000) {
+  if (document.getElementById("custom-backdrop")) return;
+
+  // Create backdrop
+  const backdrop = document.createElement("div");
+  backdrop.id = "custom-backdrop";
+  backdrop.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+  `;
+
+  // Create message container
+  const message = document.createElement("div");
+  message.textContent = textMessage;
+  message.style.cssText = `
+    color: white;
+    font-size: 3rem; /* Large text */
+    font-weight: bold;
+    text-align: center;
+    text-shadow: 3px 3px 10px rgba(255, 255, 255, 0.5);
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+  `;
+
+  // Append elements
+  backdrop.appendChild(message);
+  document.body.appendChild(backdrop);
+
+  // Apply fade-in effect
+  setTimeout(() => {
+    backdrop.style.opacity = "1";
+    message.style.opacity = "1";
+  }, 10);
+
+  // Auto-remove after set time
+  setTimeout(() => removeBackdrop(), seconds);
+
+  // Allow manual dismissal
+  backdrop.addEventListener("click", removeBackdrop);
+
+  function removeBackdrop() {
+    backdrop.style.opacity = "0";
+    message.style.opacity = "0";
+    setTimeout(() => backdrop.remove(), 300);
+  }
+}
+
+// function customBackdrop(textMessage, seconds = 1) {
+//   if (document.getElementById("custom-backdrop")) return;
+
+//   const backdrop = document.createElement("div");
+//   // backdrop.innerHTML = "Processing your images...";
+//   backdrop.id = "custom-backdrop";
+//   backdrop.style.cssText = `
+//     position: fixed;
+//     top: 0;
+//     left: 0;
+//     width: 100%;
+//     height: 100%;
+//     background: rgba(0, 0, 0, 0.5);
+//     display: flex;
+//     justify-content: center;
+//     align-items: center;
+//     z-index: 100000000;
+//   `;
+//   const message = document.createElement("span");
+//   message.textContent = textMessage;
+//   message.style.cssText = `
+//     background-color: white;
+//     padding: 20px;
+//     border-radius: 10px;
+//     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+//   `;
+//   backdrop.appendChild(message);
+//   document.body.appendChild(backdrop);
+//   setTimeout(() => backdrop.remove(), seconds * 1000);
+// }
+
 function createLoadingBackdrop() {
   if (document.getElementById("loading-backdrop")) return;
 
@@ -179,6 +267,7 @@ function appendCustomDiv() {
     disableMouseTracking();
   });
   restartButton.addEventListener("click", () => {
+    customBackdrop("Restarted", 500);
     badgeCount = 0;
     Data = [];
     // document.getElementById("button__badge").textContent = badgeCount;
@@ -186,6 +275,7 @@ function appendCustomDiv() {
   });
   pauseButton.addEventListener("click", () => {
     if (isTracking) {
+      customBackdrop("Paused");
       pauseButton.textContent = "PAUSED";
       disableMouseTracking();
     } else {
@@ -383,7 +473,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === "showDiv") appendCustomDiv();
+  if (message.action === "showDiv") {
+    customBackdrop("Capturing Started...");
+    appendCustomDiv();
+  }
 });
 
 // Current - in screenshot collection each document carries
