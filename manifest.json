@@ -1,7 +1,13 @@
 {
   "name": "Guider",
   "description": "helps to navigate through tabs",
-  "permissions": ["activeTab", "tabs", "storage", "clipboardWrite"],
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "storage",
+    "clipboardWrite",
+    "downloads"
+  ],
   "host_permissions": ["http://*/*", "https://*/*", "http://localhost:3000/*"],
   "background": {
     "service_worker": "background.js"

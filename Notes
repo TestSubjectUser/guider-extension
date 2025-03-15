@@ -1,0 +1,79 @@
+popup.js:
+The active: true property is used to specify that we want to target the active tab in the current window, active tab (the tab that the user is viewing).
+If active: false is used, it would return all tabs, not necessarily the one the user is currently interacting with.
+
+The currentWindow: true property tells the query to look for the tab in the current window.
+If currentWindow: false is used, the query might return tabs from all open windows in the browser.
+
+tabs: The tabs variable is the array of tab objects that is returned from the chrome.tabs.query call.
+
+background.js:
+chrome.runtime.onMessage.addListener (Main listener for background script)
+listens for messages sent from other parts of the Chrome extension (like popup or content scripts).
+args:
+message: The message sent by the sender (could be an object containing an action or other data).
+sender: Information about the sender (tab or extension).
+sendResponse: A function used to send a response back to the sender.
+
+cannot directly capture screenshots in a content script. Content scripts are designed to interact with the content of a webpage (DOM, styles, etc.) but do not have the necessary permissions to capture a screenshot of the tab. The chrome.tabs.captureVisibleTab function is a special API provided by the background script or popup script in a Chrome extension
+
+Content scripts run within the context of the page and have limited access to certain browser features, including tab management, screenshots, and the ability to modify browser UI (like address bar, tab URL, etc.).
+
+Without return true, the listener will send the response immediately and close the connection, even if the asynchronous operation (like capturing a screenshot or making a fetch request) hasn't completed yet.
+
+By returning true, you allow the background script (or popup) to send the response only after the asynchronous task is complete (e.g., after the screenshot is captured).
+
+By returning true, you allow the background script (or popup) to send the response only after the asynchronous task is complete (e.g., after the screenshot is captured).
+
+chrome.tabs.sendMessage(
+tabId, // The ID of the tab to send the message to.
+message, // The message to send (could be an object or primitive data).
+callback // Optional callback function that receives the response from the content script.
+);
+
+message (Object/Primitive): The message to send to the content script. It can be a string, object, or any serializable data.
+
+chrome.tabs.captureVisibleTab(
+windowId, // (optional) The window from which to capture the tab. Use `null` for the current window.
+options, // (optional) Options object to specify the capture settings.
+callback // Callback function that receives the screenshot (as a data URL).
+);
+
+windowId (Number or null): The ID of the window to capture the tab from. If you want to capture from the current window, use null. You can use chrome.windows.getCurrent() to get the window ID.
+options (Object): Options object that can contain properties like format (e.g., "png", "jpeg") and quality (for JPEG images). The default format is "png", and the default quality is 100 (for JPEG).
+
+content script.js:
+
+spinner.style.cssText:
+This property is used to directly assign a string of CSS styles to an element's inline style attribute. It applies styles to the element directly via JavaScript.
+style.textContent:
+used to insert text (in this case, CSS rules) into a <style> element. This allows you to insert CSS rules into the document that can be applied globally to the page.
+When you use style.textContent, you're adding a block of CSS rules to a <style> tag, which is then inserted into the <head> of the document. This means the styles defined within the style.textContent apply to all elements matching the selectors defined in the CSS.
+Affects any matching elements globally.
+
+The flex: 1 style ensures that the message takes up the available space in the popup, allowing for the text to adjust dynamically based on the message length.
+
+an event refers to the occurrence of a user interaction with the web page, such as a mouse click, keyboard input, or touch. The event object (event) contains useful information about the interaction, such as the type of event (e.g., click), the target element, and the coordinates of the action.
+
+event.target refers to the DOM element that the user clicked on. It allows you to access the clicked element and its properties (such as text, attributes, etc.).
+
+event.clientX gives you the horizontal coordinate (in pixels) of the mouse pointer relative to the viewport when the mouse event occurred. The viewport is the visible area of the webpage (i.e., excluding the scrollbar).
+
+event.preventDefault() is used to prevent the default behavior of the event. For example:
+In the case of a click event on a link, it prevents the link from being followed (navigating to the URL).
+In the case of a form submission, it prevents the form from being submitted.
+In other events like drag and drop, it prevents the default drag behavior.
+
+innerHTML returns or sets the HTML content (markup) inside an element, including any HTML tags within it. This allows you to get or set the HTML structure inside the element.
+
+textContent returns or sets the plain text inside an element, excluding any HTML tags. It only retrieves or modifies the text content, not the HTML structure.
+
+innerText:
+Use when you need to get or set the visible text content of an element, taking into account CSS styles.
+Useful for scenarios where the text should match what the user sees on the screen.
+
+textContent: Returns all text content within an element, including text from hidden elements and elements like <script> and <style>.
+
+textContent:
+Use when you need to get or set all text content, including hidden elements.
+More efficient and safer for performance and security reasons, especially when dealing with user input.

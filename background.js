@@ -77,6 +77,44 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     );
     return true;
   }
+  if (message.action === "downloadScreenshot") {
+    chrome.tabs.captureVisibleTab(null, { format: "png" }, (screenshotUrl) => {
+      if (chrome.runtime.lastError) {
+        console.error("Error capturing screenshot:", chrome.runtime.lastError);
+        sendResponse({
+          success: false,
+          error: "Failed to capture screenshot",
+        });
+        return;
+      }
+
+      chrome.downloads.download(
+        {
+          url: screenshotUrl,
+          filename: `guider-screenshot-${Date.now()}.png`,
+          saveAs: false,
+        },
+        () => {
+          if (chrome.runtime.lastError) {
+            console.error(
+              "Error downloading screenshot:",
+              chrome.runtime.lastError
+            );
+            sendResponse({
+              success: false,
+              error: "Failed to download screenshot",
+            });
+            return;
+          }
+
+          sendResponse({ success: true });
+        }
+      );
+    });
+
+    // Return true to indicate response will be sent asynchronously
+    return true;
+  }
   // if (message.action === "captureScreenshot") {
   //   chrome.tabs.captureVisibleTab(null, { format: "png" }, (screenshotUrl) => {
   //     if (chrome.runtime.lastError) {

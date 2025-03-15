@@ -29,7 +29,7 @@ function customBackdrop(textMessage, seconds = 1000) {
   message.textContent = textMessage;
   message.style.cssText = `
     color: white;
-    font-size: 3rem; /* Large text */
+    font-size: 3rem;
     font-weight: bold;
     text-align: center;
     text-shadow: 3px 3px 10px rgba(255, 255, 255, 0.5);
@@ -37,20 +37,16 @@ function customBackdrop(textMessage, seconds = 1000) {
     transition: opacity 0.3s ease-in-out;
   `;
 
-  // Append elements
   backdrop.appendChild(message);
   document.body.appendChild(backdrop);
 
-  // Apply fade-in effect
+  // fade-in effect
   setTimeout(() => {
     backdrop.style.opacity = "1";
     message.style.opacity = "1";
   }, 10);
 
-  // Auto-remove after set time
   setTimeout(() => removeBackdrop(), seconds);
-
-  // Allow manual dismissal
   backdrop.addEventListener("click", removeBackdrop);
 
   function removeBackdrop() {
@@ -59,37 +55,6 @@ function customBackdrop(textMessage, seconds = 1000) {
     setTimeout(() => backdrop.remove(), 300);
   }
 }
-
-// function customBackdrop(textMessage, seconds = 1) {
-//   if (document.getElementById("custom-backdrop")) return;
-
-//   const backdrop = document.createElement("div");
-//   // backdrop.innerHTML = "Processing your images...";
-//   backdrop.id = "custom-backdrop";
-//   backdrop.style.cssText = `
-//     position: fixed;
-//     top: 0;
-//     left: 0;
-//     width: 100%;
-//     height: 100%;
-//     background: rgba(0, 0, 0, 0.5);
-//     display: flex;
-//     justify-content: center;
-//     align-items: center;
-//     z-index: 100000000;
-//   `;
-//   const message = document.createElement("span");
-//   message.textContent = textMessage;
-//   message.style.cssText = `
-//     background-color: white;
-//     padding: 20px;
-//     border-radius: 10px;
-//     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-//   `;
-//   backdrop.appendChild(message);
-//   document.body.appendChild(backdrop);
-//   setTimeout(() => backdrop.remove(), seconds * 1000);
-// }
 
 function createLoadingBackdrop() {
   if (document.getElementById("loading-backdrop")) return;
@@ -134,7 +99,8 @@ function createLoadingBackdrop() {
 }
 
 function showLoadingBackdrop() {
-  createLoadingBackdrop();
+  let backdrop = document.getElementById("loading-backdrop");
+  if (!backdrop) backdrop = createLoadingBackdrop();
   document.getElementById("loading-backdrop").style.display = "flex";
 }
 
@@ -148,11 +114,12 @@ function appendCustomDiv() {
     return;
   }
 
-  const newDiv = document.createElement("div");
+  const controlPanelModel = document.createElement("div");
 
-  newDiv.id = "control-panel";
-  newDiv.style.cssText = `
+  controlPanelModel.id = "control-panel";
+  controlPanelModel.style.cssText = `
     display: flex;
+    max-width: 280px;
     align-items: center;
     background-color: white;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -190,7 +157,6 @@ function appendCustomDiv() {
     span.textContent = text;
 
     button.appendChild(span);
-
     return button;
   };
 
@@ -205,17 +171,17 @@ function appendCustomDiv() {
     justify-content: center;
     width: 40px;
     height: 40px;
-    background-color: #f56565;
+    background-color: rgb(255, 89, 66);
     border-radius: 50%;
     margin-right: 10px;
     position: relative;
     color: white;
     `;
   checkIcon.onmouseover = () => {
-    checkIcon.style.backgroundColor = "#f05656";
+    checkIcon.style.backgroundColor = "rgb(238, 48, 27)";
   };
   checkIcon.onmouseout = () => {
-    checkIcon.style.backgroundColor = "#f56565";
+    checkIcon.style.backgroundColor = "rgb(255, 89, 66)";
   };
   checkIcon.innerText = "Done";
 
@@ -224,7 +190,7 @@ function appendCustomDiv() {
   badge.className = "button__badge";
   badge.id = "button__badge";
   badge.style.cssText = `
-  background-color: #f05656;
+  background-color: rgb(238, 48, 27);
   border-radius: 50%;
   color: white;
   font-size: 10px;
@@ -234,18 +200,18 @@ function appendCustomDiv() {
   min-width: 16px;
   min-height: 16px;
   text-align: center;
-  display: none; /* Initially hidden */
+  display: none;
   font-weight: bold;
   `;
 
   checkIcon.appendChild(badge);
   const pauseButton = createButton("Pause");
+  const screenshotButton = createButton("Schreenshot");
   const restartButton = createButton("Restart");
   const closeButton = createButton(" X ");
 
-  checkIcon.addEventListener("click", () => {
+  checkIcon.addEventListener("click", async () => {
     disableMouseTracking();
-
     chrome.runtime.sendMessage({ action: "fetchStatus" });
 
     const controlPanel = document.getElementById("control-panel");
@@ -253,26 +219,18 @@ function appendCustomDiv() {
     let currUrl = window.location.href;
     currUrl = currUrl.split("://")[1] || currUrl;
     Data.push({ urlWeAreOn: currUrl });
-    sendToBackend(Data);
-    if (controlPanel) document.body.removeChild(newDiv);
+
+    try {
+      await sendToBackend(Data);
+    } catch (error) {
+      showErrorPopup("Failed to send data to backend: " + error.message);
+    }
+
+    if (controlPanel) document.body.removeChild(controlPanelModel);
     badgeCount = 0;
     Data = [];
   });
 
-  closeButton.addEventListener("click", () => {
-    badgeCount = 0;
-    Data = [];
-    document.getElementById("button__badge").style.display = "none";
-    document.body.removeChild(newDiv);
-    disableMouseTracking();
-  });
-  restartButton.addEventListener("click", () => {
-    customBackdrop("Restarted", 500);
-    badgeCount = 0;
-    Data = [];
-    // document.getElementById("button__badge").textContent = badgeCount;
-    document.getElementById("button__badge").style.display = "none";
-  });
   pauseButton.addEventListener("click", () => {
     if (isTracking) {
       customBackdrop("Paused");
@@ -284,12 +242,34 @@ function appendCustomDiv() {
     }
   });
 
-  newDiv.appendChild(checkIcon);
-  newDiv.appendChild(pauseButton);
-  newDiv.appendChild(restartButton);
-  newDiv.appendChild(closeButton);
+  screenshotButton.addEventListener("click", () => {
+    chrome.runtime.sendMessage({ action: "downloadScreenshot" }, (response) => {
+      console.log("Screenshot saved, responce: ", response);
+    });
+  });
 
-  document.body.appendChild(newDiv);
+  restartButton.addEventListener("click", () => {
+    customBackdrop("Restarted", 500);
+    badgeCount = 0;
+    Data = [];
+    // document.getElementById("button__badge").textContent = badgeCount;
+    document.getElementById("button__badge").style.display = "none";
+  });
+  closeButton.addEventListener("click", () => {
+    badgeCount = 0;
+    Data = [];
+    document.getElementById("button__badge").style.display = "none";
+    document.body.removeChild(controlPanelModel);
+    disableMouseTracking();
+  });
+
+  controlPanelModel.appendChild(checkIcon);
+  controlPanelModel.appendChild(pauseButton);
+  controlPanelModel.appendChild(screenshotButton);
+  controlPanelModel.appendChild(restartButton);
+  controlPanelModel.appendChild(closeButton);
+
+  document.body.appendChild(controlPanelModel);
 
   enableMouseTracking();
 }
@@ -310,6 +290,7 @@ function showErrorPopup(errorMessage) {
     border-radius: 5px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     z-index: 10000;
+    max-width: 300px;
     font-size: 14px;
     display: flex;
     align-items: center;
@@ -360,7 +341,17 @@ async function handleMouseClick(event) {
   // console.log(`Relative coordinates as percentage: X: ${relativeX}%, Y: ${relativeY}%`);
 
   event.preventDefault();
+
+  // let targetUrl = "";
+  // if (event.target.tagName === "A" && event.target.href) {
+  //   targetUrl = event.target.href;
+  // }
+
   chrome.runtime.sendMessage({ action: "captureScreenshot" }, (response) => {
+    if (chrome.runtime.lastError) {
+      showErrorPopup("Failed to capture screenshot. Please try again.");
+      return;
+    }
     const screenshotUrl = response.screenshotUrl;
     // chrome.runtime.sendMessage({
     //   action: "openRenderTab",
@@ -387,14 +378,11 @@ async function handleMouseClick(event) {
       showErrorPopup("You have reached the limit of 5 images");
     }
 
-    setTimeout(() => {
-      if (typeof targetUrl !== "undefined" && targetUrl) {
-        window.location.href = targetUrl;
-      }
-      // else {
-      //   console.warn("skipping redirecsn");
-      // }
-    }, 1000);
+    // if (targetUrl) {
+    //   setTimeout(() => {
+    //     window.location.href = targetUrl;
+    //   }, 500);
+    // }
   });
 }
 
@@ -406,9 +394,9 @@ function sendToBackend(data) {
     chrome.runtime.sendMessage({ action: "postimages", data }, (response) => {
       if (chrome.runtime.lastError) {
         // console.error("Runtime Error:", chrome.runtime.lastError);
-        showErrorPopup("Runtime Error: " + chrome.runtime.lastError.message);
         hideLoadingBackdrop();
-        return reject(chrome.runtime.lastError);
+        showErrorPopup("Runtime Error: " + chrome.runtime.lastError.message);
+        reject(chrome.runtime.lastError);
       } else {
         // console.log("Response received from background.js:", response);
         // window.location.href = API_URL + response.data.urlToVists;
@@ -469,10 +457,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (controlPanel) {
       controlPanel.style.display = "flex";
     }
+    sendResponse({ success: true });
   }
-});
-
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "showDiv") {
     customBackdrop("Capturing Started...");
     appendCustomDiv();
@@ -494,3 +480,5 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
  * guideDescription: "description of the guide"
  * guideImages: [title: "Clicked on button", description: "description", relativeCoordinates: {x: 50, y: 50}, screenshotUrl: "data:image/png;base64,iVBORw0KGgoA..."]
  */
+
+// migrate data to local storage
