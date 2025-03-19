@@ -113,8 +113,20 @@ function hideLoadingBackdrop() {
 function appendCustomDiv() {
   return new Promise((resolve, reject) => {
     if (iframeRef) {
-      console.log("Iframe already exists.");
-      return resolve(iframeRef);
+      const doc = iframeRef.contentDocument || iframeRef.contentWindow.document;
+      let controlPanel = doc.getElementById("control-panel");
+
+      if (controlPanel) {
+        // Panel exists, just show it
+        controlPanel.style.display = "flex";
+        resolve(iframeRef);
+      } else {
+        // Panel was removed, recreate it
+        // controlPanel = createControlPanel(doc);
+        // doc.body.appendChild(controlPanel);
+        resolve(iframeRef);
+      }
+      return;
     }
     // if (document.getElementById("control-panel")) {
     //   return;
@@ -148,8 +160,6 @@ function appendCustomDiv() {
     display: flex;
     max-width: 300px;
     align-items: center;
-    background-color: white;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     border-radius: 8px;
     padding: 10px;
     position: fixed;
@@ -157,6 +167,8 @@ function appendCustomDiv() {
     left: 20px;
     z-index: 9999;
   `;
+      // background-color: white;
+      //   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 
       const createButton = (text) => {
         const button = doc.createElement("button");
@@ -167,7 +179,7 @@ function appendCustomDiv() {
       background: transparent;
       border: none;
       cursor: pointer;
-      transition: color 0.3s;
+      transition: color 0.5s;
     `;
         button.onmouseover = () => {
           button.style.color = "#2d3748";
@@ -238,6 +250,11 @@ function appendCustomDiv() {
 
       checkIcon.addEventListener("click", async () => {
         disableMouseTracking();
+        // console.log("Data: ", Data);
+        if (!Data || Data.length < 2) {
+          showErrorPopup("you have to click atleast 1 or more images.");
+          return;
+        }
         chrome.runtime.sendMessage({ action: "fetchStatus" });
 
         const controlPanel = doc.getElementById("control-panel");
@@ -284,19 +301,67 @@ function appendCustomDiv() {
         // doc.getElementById("button__badge").textContent = badgeCount;
         doc.getElementById("button__badge").style.display = "none";
       });
+
       closeButton.addEventListener("click", () => {
         badgeCount = 0;
         Data = [];
         doc.getElementById("button__badge").style.display = "none";
-        doc.body.removeChild(controlPanelModel);
+        // doc.body.removeChild(controlPanelModel);
+        controlPanelModel.style.display = "none";
         disableMouseTracking();
       });
 
-      controlPanelModel.appendChild(checkIcon);
-      controlPanelModel.appendChild(pauseButton);
-      controlPanelModel.appendChild(screenshotButton);
-      controlPanelModel.appendChild(restartButton);
-      controlPanelModel.appendChild(closeButton);
+      const buttonsWrapper = doc.createElement("div");
+      buttonsWrapper.style.cssText = `
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+      buttonsWrapper.appendChild(checkIcon);
+      buttonsWrapper.appendChild(pauseButton);
+      buttonsWrapper.appendChild(screenshotButton);
+      buttonsWrapper.appendChild(restartButton);
+      buttonsWrapper.appendChild(closeButton);
+
+      controlPanelModel.appendChild(buttonsWrapper);
+
+      // controlPanelModel.appendChild(checkIcon);
+      // controlPanelModel.appendChild(pauseButton);
+      // controlPanelModel.appendChild(screenshotButton);
+      // controlPanelModel.appendChild(restartButton);
+      // controlPanelModel.appendChild(closeButton);
+
+      // Hide other buttons initially
+      [pauseButton, screenshotButton, restartButton, closeButton].forEach(
+        (btn) => {
+          btn.style.opacity = "0";
+          btn.style.pointerEvents = "none";
+          btn.style.transition = "opacity 0.3s ease";
+        }
+      );
+
+      // Manage visibility on hover
+      let hideTimeout;
+      buttonsWrapper.addEventListener("mouseenter", () => {
+        clearTimeout(hideTimeout);
+        [pauseButton, screenshotButton, restartButton, closeButton].forEach(
+          (btn) => {
+            btn.style.opacity = "1";
+            btn.style.pointerEvents = "auto";
+          }
+        );
+      });
+
+      buttonsWrapper.addEventListener("mouseleave", () => {
+        hideTimeout = setTimeout(() => {
+          [pauseButton, screenshotButton, restartButton, closeButton].forEach(
+            (btn) => {
+              btn.style.opacity = "0";
+              btn.style.pointerEvents = "none";
+            }
+          );
+        }, 500);
+      });
 
       doc.body.appendChild(controlPanelModel);
     };
@@ -505,6 +570,7 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
   if (message.action === "showDiv") {
     console.log("Showing control panel...");
     sendResponse({ success: true });
+    await appendCustomDiv();
   }
 
   // if (message.action === "showDiv") {
