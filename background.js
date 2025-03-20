@@ -1,4 +1,5 @@
 const LOCATION_ENDPOINT = "http://localhost:3000/api";
+// const LOCATION_ENDPOINT = "https://localhost:3000/api";
 
 console.log("Background script is running...");
 function fetchStatus() {
