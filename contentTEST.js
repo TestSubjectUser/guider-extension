@@ -1,9 +1,10 @@
-const API_URL = "http://localhost:3000";
-// const API_URL = "https://localhost:3000";
 let Data = [];
-let isTracking = false;
 let badgeCount = 0;
 let iframeRef = null;
+const IMAGE_LIMIT = 10;
+let isTracking = false;
+const API_URL = "http://localhost:3000";
+// const API_URL = "https://localhost:3000";
 
 function customBackdrop(textMessage, seconds = 1000) {
   if (document.getElementById("custom-backdrop")) return;
@@ -330,7 +331,34 @@ function appendCustomDiv() {
         chrome.runtime.sendMessage(
           { action: "downloadScreenshot" },
           (response) => {
+            handleMouseClick;
             console.log("Screenshot saved, responce: ", response);
+          }
+        );
+        chrome.runtime.sendMessage(
+          { action: "captureScreenshot" },
+          (response) => {
+            if (chrome.runtime.lastError) {
+              showErrorPopup("Failed to capture screenshot. Please try again.");
+              return;
+            }
+            const screenshotUrl = response.screenshotUrl;
+            const data = {
+              title: "",
+              relativeCoordinates: null,
+              screenshotUrl: screenshotUrl,
+            };
+            if (Data.length < IMAGE_LIMIT) {
+              badgeCount++;
+              doc.getElementById("button__badge").textContent = badgeCount;
+              doc.getElementById("button__badge").style.display =
+                "inline-block";
+              console.log("Added to array");
+              Data.push(data);
+            } else {
+              console.log("__Reached limit__");
+              showErrorPopup("You have reached the limit of 5 images");
+            }
           }
         );
       });
@@ -494,7 +522,7 @@ async function handleMouseClick(event) {
       screenshotUrl: screenshotUrl,
     };
     // TO LOCAL ARRAY
-    if (Data.length < 5) {
+    if (Data.length < IMAGE_LIMIT) {
       badgeCount++;
       // console.log("badgeCount: ", badgeCount);
       doc.getElementById("button__badge").textContent = badgeCount;
