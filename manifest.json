@@ -1,12 +1,14 @@
 {
   "name": "Guider",
   "description": "helps to navigate through tabs",
+  "incognito": "split",
   "permissions": [
     "activeTab",
     "tabs",
     "storage",
     "clipboardWrite",
-    "downloads"
+    "downloads",
+    "scripting"
   ],
   "host_permissions": ["http://*/*", "https://*/*", "http://localhost:3000/*"],
   "background": {
@@ -22,7 +24,9 @@
     {
       "js": ["contentTEST.js"],
       "matches": ["<all_urls>"],
-      "type": "module"
+      "type": "module",
+      "all_frames": true,
+      "match_about_blank": true
     }
   ],
   "icons": {

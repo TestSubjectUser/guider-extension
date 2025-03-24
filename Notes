@@ -77,3 +77,22 @@ textContent: Returns all text content within an element, including text from hid
 textContent:
 Use when you need to get or set all text content, including hidden elements.
 More efficient and safer for performance and security reasons, especially when dealing with user input.
+
+<!-- TODO -->
+
+1. save data in localstorage
+   // Save data
+   chrome.storage.local.set({ guideData: Data });
+
+// Load data
+chrome.storage.local.get("guideData", (result) => {
+Data = result.guideData || [];
+});
+
+2. runtime.incognito
+
+3. visit: https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/incognito
+
+4. add step for current tab(title, url), handle that data in route
+
+5. add step same as above for tab change as well

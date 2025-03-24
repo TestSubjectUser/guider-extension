@@ -114,6 +114,7 @@ function hideLoadingBackdrop() {
 function appendCustomDiv() {
   return new Promise((resolve, reject) => {
     if (iframeRef) {
+      console.log("iframeRef exists: ", iframeRef);
       const doc = iframeRef.contentDocument || iframeRef.contentWindow.document;
       let controlPanel = doc.getElementById("control-panel");
 
@@ -137,18 +138,16 @@ function appendCustomDiv() {
     iframe.id = "control-panel-iframe";
     iframe.style.cssText = `
   position: fixed;
-  bottom: 20px;
+  bottom: 6px;
   left: 20px;
   width: 400px;
-  height: 100px;
+  height: 50px;
   border: none;
   z-index: 9999;
   `;
 
     document.body.appendChild(iframe);
     iframeRef = iframe;
-
-    resolve(iframeRef);
 
     // Wait for iframe to load
     iframe.onload = function () {
@@ -162,7 +161,7 @@ function appendCustomDiv() {
       align-items: center;
       border-radius: 8px;
       position: fixed;
-      bottom: 20px;
+      bottom: 6px;
       z-index: 9999;
       `;
       // background-color: white;
@@ -317,8 +316,8 @@ function appendCustomDiv() {
       pauseButton.addEventListener("click", () => {
         if (isTracking) {
           customBackdrop("Paused");
-          pauseButton.querySelector("span").textContent = "PAUSED";
-          // pauseButton.textContent = "PAUSED";
+          pauseButton.querySelector("span").textContent = "resume";
+          // pauseButton.textContent = "resume";
           disableMouseTracking();
         } else {
           pauseButton.querySelector("span").textContent = "Pause";
@@ -374,9 +373,9 @@ function appendCustomDiv() {
 
       controlPanelModel.appendChild(buttonsPanel);
 
-      // buttonsPanel.style.opacity = "0";
-      // buttonsPanel.pointerEvents = "none";
-      // buttonsPanel.style.transition = "opacity 0.3s ease";
+      buttonsPanel.style.opacity = "0";
+      buttonsPanel.pointerEvents = "none";
+      buttonsPanel.style.transition = "opacity 0.3s ease";
 
       // Manage visibility on hover
       let hideTimeout;
@@ -389,15 +388,16 @@ function appendCustomDiv() {
 
       controlPanelModel.addEventListener("mouseleave", () => {
         hideTimeout = setTimeout(() => {
-          // buttonsPanel.style.opacity = "0";
-          // buttonsPanel.pointerEvents = "none";
-          // buttonsPanel.style.pointerEvents = "none";
+          buttonsPanel.style.opacity = "0";
+          buttonsPanel.pointerEvents = "none";
+          buttonsPanel.style.pointerEvents = "none";
         }, 500);
       });
 
       doc.body.appendChild(controlPanelModel);
     };
     enableMouseTracking();
+    resolve(iframeRef);
   });
 }
 
@@ -454,6 +454,7 @@ async function handleMouseClick(event) {
   // if (iframeRef && iframeRef.contains(event.target)) return;
 
   let textOfClickedElement = formatElementText(event.target);
+  // console.log("Text of clicked element: ", textOfClickedElement);
 
   const x = event.clientX;
   const y = event.clientY;
@@ -562,47 +563,49 @@ function disableMouseTracking() {
 }
 
 function formatElementText(element) {
-  let text = element.innerText || element.textContent || "";
+  let text =
+    element.innerText || element.textContent || "Click on highlighted area";
   return text.length > 15
-    ? `Clicked on ${text.slice(0, 15).replace(/\n/g, " ")}...`
-    : `Clicked on ${text.replace(/\n/g, " ")}`;
+    ? `Click on ${text.slice(0, 15).replace(/\n/g, " ")}...`
+    : `Click on ${text.replace(/\n/g, " ")}`;
 }
 
 chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
-  if (!iframeRef) {
-    console.log("Iframe not found. Creating it now...");
-    await appendCustomDiv();
-  }
-
-  const doc = iframeRef.contentDocument || iframeRef.contentWindow.document;
-  if (!doc) {
-    console.warn("iframe document is not available.");
-    sendResponse({ success: false, error: "iframe document not available" });
-    return;
-  }
-
-  if (message.action === "hideControlPanel") {
-    console.log("Hiding control panel...");
-    const controlPanel = doc.getElementById("control-panel");
-    if (controlPanel) {
-      controlPanel.style.display = "none";
-    }
-    sendResponse({ success: true });
-  }
-
-  if (message.action === "showControlPanel") {
-    console.log("Restoring control panel...");
-    const controlPanel = doc.getElementById("control-panel");
-    if (controlPanel) {
-      controlPanel.style.display = "flex";
-    }
-    sendResponse({ success: true });
-  }
-
+  // if (!iframeRef) {
+  //   console.log("Iframe not found. Creating it now...");
+  //   await appendCustomDiv();
+  // }
   if (message.action === "showDiv") {
     console.log("Showing control panel...");
     sendResponse({ success: true });
     await appendCustomDiv();
+  }
+
+  if (iframeRef) {
+    const doc = iframeRef.contentDocument || iframeRef.contentWindow.document;
+    if (!doc) {
+      console.warn("iframe document is not available.");
+      sendResponse({ success: false, error: "iframe document not available" });
+      return;
+    }
+
+    if (message.action === "hideControlPanel") {
+      console.log("Hiding control panel...");
+      const controlPanel = doc.getElementById("control-panel");
+      if (controlPanel) {
+        controlPanel.style.display = "none";
+      }
+      sendResponse({ success: true });
+    }
+
+    if (message.action === "showControlPanel") {
+      console.log("Restoring control panel...");
+      const controlPanel = doc.getElementById("control-panel");
+      if (controlPanel) {
+        controlPanel.style.display = "flex";
+      }
+      sendResponse({ success: true });
+    }
   }
 
   // if (message.action === "showDiv") {

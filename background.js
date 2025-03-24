@@ -111,6 +111,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           sendResponse({ success: true });
         }
       );
+
+      // add step after download
     });
 
     // Return true to indicate response will be sent asynchronously
