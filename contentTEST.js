@@ -143,20 +143,38 @@ function appendCustomDiv() {
   position: fixed;
   bottom: 6px;
   left: 20px;
-  width: 400px;
+  width: 385px;
   height: 50px;
   border: none;
   z-index: 9999;
-  `;
-    iframe.srcdoc = `<html>
-      <head>
-        <style>
-          body { margin: 0; padding: 0; background: transparent; }
-        </style>
-      </head>
-      <body>
-      </body></html>`;
+  border-radius: 8px;
+  background: transparent;
+`;
+    iframe.setAttribute("allowTransparency", "true");
+
+    // iframe.srcdoc = `
+    //     <html>
+    //     <head>
+    //       <style>
+    //         html, body {
+    //           margin: 0;
+    //           padding: 0;
+    //           background: none !important;
+    //         }
+    //         iframe {
+    //           background: none !important;
+    //           border: none !important;
+    //         }
+    //       </style>
+    //     </head>
+    //     <body>
+    //     </body>
+    //     </html>
+    //   `;
+
     document.body.appendChild(iframe);
+    document.body.style.backgroundColor = "transparent"; // Ensure parent respects transparency
+
     iframeRef = iframe;
 
     // Wait for iframe to load

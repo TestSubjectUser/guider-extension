@@ -78,6 +78,10 @@ textContent:
 Use when you need to get or set all text content, including hidden elements.
 More efficient and safer for performance and security reasons, especially when dealing with user input.
 
+Bypasses about:blank Restrictions
+
+Chrome blocks scripts inside about:blank iframes in Incognito mode, preventing your control panel from loading.
+
 <!-- TODO -->
 
 1. save data in localstorage
