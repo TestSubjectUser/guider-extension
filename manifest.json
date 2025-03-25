@@ -25,8 +25,7 @@
       "js": ["contentTEST.js"],
       "matches": ["<all_urls>"],
       "type": "module",
-      "all_frames": true,
-      "match_about_blank": true
+      "all_frames": true
     }
   ],
   "icons": {

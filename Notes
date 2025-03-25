@@ -96,3 +96,5 @@ Data = result.guideData || [];
 4. add step for current tab(title, url), handle that data in route
 
 5. add step same as above for tab change as well
+
+new issue : appears white background in some website

@@ -114,6 +114,8 @@ function hideLoadingBackdrop() {
 
 function appendCustomDiv() {
   return new Promise((resolve, reject) => {
+    if (window.self !== window.top) return;
+
     if (iframeRef) {
       console.log("iframeRef exists: ", iframeRef);
       const doc = iframeRef.contentDocument || iframeRef.contentWindow.document;
@@ -146,12 +148,21 @@ function appendCustomDiv() {
   border: none;
   z-index: 9999;
   `;
-
+    iframe.srcdoc = `<html>
+      <head>
+        <style>
+          body { margin: 0; padding: 0; background: transparent; }
+        </style>
+      </head>
+      <body>
+      </body></html>`;
     document.body.appendChild(iframe);
     iframeRef = iframe;
 
     // Wait for iframe to load
     iframe.onload = function () {
+      console.log("Iframe loaded, attempting to append control panel...");
+
       const doc = iframe.contentDocument || iframe.contentWindow.document;
 
       const controlPanelModel = doc.createElement("div");
