@@ -112,6 +112,82 @@ function hideLoadingBackdrop() {
   if (backdrop) backdrop.remove();
 }
 
+function showConfirmationPopup(message) {
+  return new Promise((resolve) => {
+    const backdrop = document.createElement("div");
+    backdrop.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 10001;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    `;
+
+    const dialog = document.createElement("div");
+    dialog.style.cssText = `
+      background: black;
+      padding: 20px;
+      border-radius: 8px;
+       background-image: repeating-linear-gradient(135deg,#f04b51,#f04b51 24px,#f2545b 0,#f2545b 48px)
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      text-align: center;
+    `;
+
+    const text = document.createElement("p");
+    text.textContent = message;
+    text.style.margin = "0 0 15px 0";
+
+    const buttonContainer = document.createElement("div");
+    buttonContainer.style.display = "flex";
+    buttonContainer.style.gap = "10px";
+    buttonContainer.style.justifyContent = "center";
+
+    const okButton = document.createElement("button");
+    okButton.textContent = "OK";
+    okButton.style.cssText = `
+      padding: 8px 16px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    `;
+
+    const cancelButton = document.createElement("button");
+    cancelButton.textContent = "Cancel";
+    cancelButton.style.cssText = `
+      padding: 8px 16px;
+      background: #f44336;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    `;
+
+    okButton.addEventListener("click", () => {
+      document.body.removeChild(backdrop);
+      resolve(true);
+    });
+
+    cancelButton.addEventListener("click", () => {
+      document.body.removeChild(backdrop);
+      resolve(false);
+    });
+
+    buttonContainer.appendChild(cancelButton);
+    buttonContainer.appendChild(okButton);
+    dialog.appendChild(text);
+    dialog.appendChild(buttonContainer);
+    backdrop.appendChild(dialog);
+    document.body.appendChild(backdrop);
+  });
+}
+
 function appendCustomDiv() {
   return new Promise((resolve, reject) => {
     if (window.self !== window.top) return;
@@ -386,27 +462,53 @@ function appendCustomDiv() {
               Data.push(data);
             } else {
               console.log("__Reached limit__");
-              showErrorPopup("You have reached the limit of 5 images");
+              showErrorPopup(
+                `You have reached the limit of ${IMAGE_LIMIT} images`
+              );
             }
           }
         );
       });
 
-      restartButton.addEventListener("click", () => {
-        customBackdrop("Restarted", 500);
-        badgeCount = 0;
-        Data = [];
-        // doc.getElementById("button__badge").textContent = badgeCount;
-        doc.getElementById("button__badge").style.display = "none";
-      });
-
-      closeButton.addEventListener("click", () => {
-        badgeCount = 0;
-        Data = [];
-        doc.getElementById("button__badge").style.display = "none";
-        // doc.body.removeChild(controlPanelModel);
-        controlPanelModel.style.display = "none";
+      restartButton.addEventListener("click", async () => {
         disableMouseTracking();
+        const confirmed = await showConfirmationPopup(
+          "Are you sure you want to restart?"
+        );
+        if (confirmed) {
+          customBackdrop("Restarted", 500);
+          badgeCount = 0;
+          Data = [];
+          doc.getElementById("button__badge").style.display = "none";
+        }
+        setTimeout(() => {
+          enableMouseTracking();
+        }, 500);
+      });
+      // restartButton.addEventListener("click", () => {
+      //   customBackdrop("Restarted", 500);
+      //   badgeCount = 0;
+      //   Data = [];
+      //   // doc.getElementById("button__badge").textContent = badgeCount;
+      //   doc.getElementById("button__badge").style.display = "none";
+      // });
+
+      closeButton.addEventListener("click", async () => {
+        disableMouseTracking();
+        const confirmed = await showConfirmationPopup(
+          "Are you sure you want to close?"
+        );
+        if (confirmed) {
+          badgeCount = 0;
+          Data = [];
+          doc.getElementById("button__badge").style.display = "none";
+          // doc.body.removeChild(controlPanelModel);
+          controlPanelModel.style.display = "none";
+          disableMouseTracking();
+        }
+        setTimeout(() => {
+          enableMouseTracking();
+        }, 500);
       });
 
       const buttonsPanel = doc.createElement("div");
@@ -560,7 +662,7 @@ async function handleMouseClick(event) {
       Data.push(data);
     } else {
       console.log("__Reached limit__");
-      showErrorPopup("You have reached the limit of 5 images");
+      showErrorPopup(`You have reached the limit of ${IMAGE_LIMIT} images`);
     }
 
     // if (targetUrl) {
@@ -620,8 +722,7 @@ function disableMouseTracking() {
 }
 
 function formatElementText(element) {
-  let text =
-    element.innerText || element.textContent || "Click on highlighted area";
+  let text = element.innerText || element.textContent || "highlighted area";
   return text.length > 15
     ? `Click on ${text.slice(0, 15).replace(/\n/g, " ")}...`
     : `Click on ${text.replace(/\n/g, " ")}`;

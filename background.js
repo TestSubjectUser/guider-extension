@@ -37,6 +37,16 @@ async function postData(data) {
   }
 }
 
+// chrome.tabs.onActivated.addListener((activeInfo) => {
+//   chrome.tabs.get(activeInfo.tabId, (tab) => {
+//     console.log("Active Tab:", {
+//       title: tab.title,
+//       url: tab.url,
+//       favIconUrl: tab.favIconUrl,
+//     });
+//   });
+// });
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "redirectToDashboard") {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {

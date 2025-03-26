@@ -102,3 +102,15 @@ Data = result.guideData || [];
 5. add step same as above for tab change as well
 
 new issue : appears white background in some website
+
+Background Script: Use the background script to send messages to content scripts in all tabs.
+chrome.action.onClicked.addListener(() => {
+chrome.tabs.query({}, tabs => {
+tabs.forEach(tab => {
+chrome.scripting.executeScript({
+target: { tabId: tab.id },
+files: ['content.js']
+});
+});
+});
+});
