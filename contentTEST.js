@@ -505,10 +505,11 @@ function appendCustomDiv() {
           // doc.body.removeChild(controlPanelModel);
           controlPanelModel.style.display = "none";
           disableMouseTracking();
+        } else {
+          setTimeout(() => {
+            enableMouseTracking();
+          }, 500);
         }
-        setTimeout(() => {
-          enableMouseTracking();
-        }, 500);
       });
 
       const buttonsPanel = doc.createElement("div");
