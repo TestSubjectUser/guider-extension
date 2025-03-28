@@ -40,6 +40,23 @@ async function clearStorageData() {
   });
 }
 
+function logTabTitle(title) {
+  console.log(`Current tab title: ${title}`);
+}
+
+async function initControlPanel(visible = false) {
+  if (!iframeRef) {
+    await appendCustomDiv();
+  }
+  const doc = iframeRef.contentDocument || iframeRef.contentWindow.document;
+  const controlPanel = doc.getElementById("control-panel");
+  if (controlPanel) {
+    controlPanel.style.display = visible ? "flex" : "none";
+  } else {
+    console.log("Control panel not found, initControlPanel function");
+  }
+}
+
 function customBackdrop(textMessage, seconds = 1000) {
   if (document.getElementById("custom-backdrop")) return;
 
@@ -242,7 +259,6 @@ async function appendCustomDiv() {
   return new Promise(async (resolve, reject) => {
     if (window.self !== window.top) return;
 
-    // Function to create and append control panel
     const createControlPanel = async (doc) => {
       const { badgeCount } = await getStorageData();
 
@@ -471,6 +487,10 @@ async function appendCustomDiv() {
           doc.getElementById("button__badge").style.display = "none";
           controlPanelModel.style.display = "none";
           disableMouseTracking();
+          chrome.runtime.sendMessage({
+            action: "setExtensionState",
+            active: false,
+          });
         } else {
           setTimeout(() => {
             enableMouseTracking();
@@ -533,12 +553,11 @@ async function appendCustomDiv() {
         controlPanel = await createControlPanel(doc);
         doc.body.appendChild(controlPanel);
       } else {
-        // Panel exists, just show it
-        controlPanel.style.display = "flex";
         const { badgeCount } = await getStorageData();
-        if (badgeCount > 0) {
-          doc.getElementById("button__badge").textContent = badgeCount;
-          doc.getElementById("button__badge").style.display = "inline-block";
+        const badge = doc.getElementById("button__badge");
+        if (badge) {
+          badge.textContent = badgeCount;
+          badge.style.display = badgeCount > 0 ? "inline-block" : "none";
         }
       }
 
@@ -572,6 +591,15 @@ async function appendCustomDiv() {
       const doc = iframe.contentDocument || iframe.contentWindow.document;
       const controlPanel = await createControlPanel(doc);
       doc.body.appendChild(controlPanel);
+
+      // Initialize badge count
+      const { badgeCount } = await getStorageData();
+      const badge = doc.getElementById("button__badge");
+      if (badge) {
+        badge.textContent = badgeCount;
+        badge.style.display = badgeCount > 0 ? "inline-block" : "none";
+      }
+
       enableMouseTracking();
       resolve(iframeRef);
     };
@@ -625,9 +653,11 @@ function showErrorPopup(errorMessage) {
 }
 
 async function handleMouseClick(event) {
-  const doc = iframeRef.contentDocument || iframeRef.contentWindow.document;
+  const doc = iframeRef?.contentDocument || iframeRef?.contentWindow?.document;
+  if (!doc) return;
+
   const controlPanel = doc.getElementById("control-panel");
-  if (controlPanel && controlPanel.contains(event.target)) return;
+  if (controlPanel?.contains(event.target)) return;
   // if (iframeRef && iframeRef.contains(event.target)) return;
 
   let textOfClickedElement = formatElementText(event.target);
@@ -680,10 +710,13 @@ async function handleMouseClick(event) {
         Data.push(data);
         await updateStorageData(Data, newCount);
         // console.log("badgeCount: ", badgeCount);
-        doc.getElementById("button__badge").textContent = badgeCount;
-        doc.getElementById("button__badge").style.display = "inline-block";
-        console.log("Added to array");
-        Data.push(data);
+        // Update badge in UI
+        const badge = doc.getElementById("button__badge");
+        if (badge) {
+          badge.textContent = newCount;
+          badge.style.display = "inline-block";
+        }
+        // Data.push(data);
       } else {
         console.log("__Reached limit__");
         showErrorPopup(`You have reached the limit of ${IMAGE_LIMIT} images`);
@@ -758,6 +791,22 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
   //   console.log("Iframe not found. Creating it now...");
   //   await appendCustomDiv();
   // }
+  if (message.action === "initControlPanel") {
+    await initControlPanel(message.visible);
+    sendResponse({ success: true });
+  } else if (message.action === "updateTabTitle") {
+    if (message.tabTitle) {
+      logTabTitle(message.tabTitle);
+    } else {
+      chrome.runtime.sendMessage({ action: "getTabTitle" }, (response) => {
+        if (response.tabTitle) {
+          logTabTitle(response.tabTitle);
+        }
+      });
+    }
+    sendResponse({ success: true });
+  }
+
   if (message.action === "showDiv") {
     console.log("Showing control panel...");
     sendResponse({ success: true });

@@ -1,5 +1,7 @@
 const LOCATION_ENDPOINT = "http://localhost:3000/api";
 // const LOCATION_ENDPOINT = "https://localhost:3000/api";
+let isExtensionActive = false;
+let currentActiveTabId = null;
 
 console.log("Background script is running...");
 function fetchStatus() {
@@ -46,8 +48,68 @@ async function postData(data) {
 //     });
 //   });
 // });
+// Track tab changes
+chrome.tabs.onActivated.addListener((activeInfo) => {
+  currentActiveTabId = activeInfo.tabId;
+  if (isExtensionActive) {
+    chrome.tabs.sendMessage(activeInfo.tabId, {
+      action: "updateTabTitle",
+      tabId: activeInfo.tabId,
+    });
+  }
+});
+
+// Handle new tab creation
+chrome.tabs.onCreated.addListener((tab) => {
+  if (isExtensionActive) {
+    chrome.tabs.sendMessage(tab.id, {
+      action: "initControlPanel",
+      visible: false,
+    });
+  }
+});
+
+// Update tab title when it changes
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (isExtensionActive && changeInfo.title && tabId === currentActiveTabId) {
+    chrome.tabs.sendMessage(tabId, {
+      action: "updateTabTitle",
+      tabTitle: tab.title,
+    });
+  }
+});
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === "setExtensionState") {
+    isExtensionActive = message.active;
+    if (isExtensionActive) {
+      currentActiveTabId = sender.tab.id;
+      // Initialize in all tabs
+      chrome.tabs.query({}, (tabs) => {
+        tabs.forEach((tab) => {
+          if (tab.id) {
+            chrome.tabs.sendMessage(tab.id, {
+              action: "initControlPanel",
+              visible: tab.id === sender.tab.id,
+            });
+          }
+        });
+      });
+    } else {
+      // Hide in all tabs
+      chrome.tabs.query({}, (tabs) => {
+        tabs.forEach((tab) => {
+          if (tab.id) {
+            chrome.tabs.sendMessage(tab.id, {
+              action: "hideControlPanel",
+            });
+          }
+        });
+      });
+    }
+    sendResponse({ success: true });
+  }
+
   if (message.action === "redirectToDashboard") {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (tabs.length > 0 && tabs[0].id) {

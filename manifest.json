@@ -8,11 +8,13 @@
     "storage",
     "clipboardWrite",
     "downloads",
-    "scripting"
+    "scripting",
+    "webNavigation"
   ],
   "host_permissions": ["<all_urls>"],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
   "version": "1.0",
   "manifest_version": 3,
