@@ -179,3 +179,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   //   });
   // }
 });
+
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.storage.local.set({ screenshotData: [], badgeCount: 0 });
+});

@@ -1,10 +1,44 @@
-let Data = [];
-let badgeCount = 0;
+// let Data = [];
+// let badgeCount = 0;
 let iframeRef = null;
 const IMAGE_LIMIT = 10;
 let isTracking = false;
 const API_URL = "http://localhost:3000";
 // const API_URL = "https://localhost:3000";
+
+// UTILITY
+async function getStorageData() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get(["screenshotData", "badgeCount"], (result) => {
+      resolve({
+        Data: result.screenshotData || [],
+        badgeCount: result.badgeCount || 0,
+      });
+    });
+  });
+}
+async function updateStorageData(newData, newCount) {
+  return new Promise((resolve) => {
+    chrome.storage.local.set(
+      {
+        screenshotData: newData,
+        badgeCount: newCount,
+      },
+      () => resolve()
+    );
+  });
+}
+async function clearStorageData() {
+  return new Promise((resolve) => {
+    chrome.storage.local.set(
+      {
+        screenshotData: [],
+        badgeCount: 0,
+      },
+      () => resolve()
+    );
+  });
+}
 
 function customBackdrop(textMessage, seconds = 1000) {
   if (document.getElementById("custom-backdrop")) return;
@@ -205,7 +239,7 @@ function showConfirmationPopup(
 }
 
 function appendCustomDiv() {
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     if (window.self !== window.top) return;
 
     if (iframeRef) {
@@ -216,6 +250,11 @@ function appendCustomDiv() {
       if (controlPanel) {
         // Panel exists, just show it
         controlPanel.style.display = "flex";
+        const { badgeCount } = await getStorageData();
+        if (badgeCount > 0) {
+          doc.getElementById("button__badge").textContent = badgeCount;
+          doc.getElementById("button__badge").style.display = "inline-block";
+        }
         resolve(iframeRef);
       } else {
         // Panel was removed, recreate it
@@ -268,6 +307,12 @@ function appendCustomDiv() {
     document.body.style.backgroundColor = "transparent"; // Ensure parent respects transparency
 
     iframeRef = iframe;
+
+    const { badgeCount } = await getStorageData();
+    if (badgeCount > 0) {
+      doc.getElementById("button__badge").textContent = badgeCount;
+      doc.getElementById("button__badge").style.display = "inline-block";
+    }
 
     // Wait for iframe to load
     iframe.onload = function () {
@@ -364,7 +409,7 @@ function appendCustomDiv() {
       color: black;
       font-size: 10px;
       position: absolute;
-  top: -3px;
+  top: 0px;
   right: -3px;
   min-width: 16px;
   min-height: 16px;
@@ -411,7 +456,8 @@ function appendCustomDiv() {
 
       checkIcon.addEventListener("click", async () => {
         disableMouseTracking();
-        // console.log("Data: ", Data);
+        const { Data } = await getStorageData();
+        console.log("Data: ", Data);
         if (!Data || Data.length < 2) {
           showErrorPopup("you have to click atleast 1 or more images.");
           return;
@@ -426,6 +472,8 @@ function appendCustomDiv() {
 
         try {
           await sendToBackend(Data);
+          await clearStorageData();
+          if (controlPanel) doc.body.removeChild(controlPanelModel);
         } catch (error) {
           showErrorPopup("Failed to send data to backend: " + error.message);
         }
@@ -448,7 +496,7 @@ function appendCustomDiv() {
         }
       });
 
-      screenshotButton.addEventListener("click", () => {
+      screenshotButton.addEventListener("click", async () => {
         chrome.runtime.sendMessage(
           { action: "downloadScreenshot" },
           (response) => {
@@ -458,11 +506,12 @@ function appendCustomDiv() {
         );
         chrome.runtime.sendMessage(
           { action: "captureScreenshot" },
-          (response) => {
+          async (response) => {
             if (chrome.runtime.lastError) {
               showErrorPopup("Failed to capture screenshot. Please try again.");
               return;
             }
+            const { Data, badgeCount } = await getStorageData();
             const screenshotUrl = response.screenshotUrl;
             const data = {
               title: "",
@@ -470,7 +519,10 @@ function appendCustomDiv() {
               screenshotUrl: screenshotUrl,
             };
             if (Data.length < IMAGE_LIMIT) {
-              badgeCount++;
+              // badgeCount++;
+              const newCount = badgeCount + 1;
+              Data.push(data);
+              await updateStorageData(Data, newCount);
               doc.getElementById("button__badge").textContent = badgeCount;
               doc.getElementById("button__badge").style.display =
                 "inline-block";
@@ -495,8 +547,9 @@ function appendCustomDiv() {
         );
         if (confirmed) {
           customBackdrop("Restarted", 500);
-          badgeCount = 0;
-          Data = [];
+          // badgeCount = 0;
+          // Data = [];
+          await clearStorageData();
           doc.getElementById("button__badge").style.display = "none";
         }
         setTimeout(() => {
@@ -518,8 +571,9 @@ function appendCustomDiv() {
           "Are you sure you want to close?"
         );
         if (confirmed) {
-          badgeCount = 0;
-          Data = [];
+          await clearStorageData();
+          // badgeCount = 0;
+          // Data = [];
           doc.getElementById("button__badge").style.display = "none";
           // doc.body.removeChild(controlPanelModel);
           controlPanelModel.style.display = "none";
@@ -654,43 +708,50 @@ async function handleMouseClick(event) {
   //   targetUrl = event.target.href;
   // }
 
-  chrome.runtime.sendMessage({ action: "captureScreenshot" }, (response) => {
-    if (chrome.runtime.lastError) {
-      showErrorPopup("Failed to capture screenshot. Please try again.");
-      return;
-    }
-    const screenshotUrl = response.screenshotUrl;
-    // chrome.runtime.sendMessage({
-    //   action: "openRenderTab",
-    //   screenshotUrl: screenshotUrl,
-    //   clickCoordinates: { x: relativeX, y: relativeY },
-    // });
-    const data = {
-      // mouseCoordinates: { x, y },
-      // pageSize: { width: pageWidth, height: pageHeight },
-      title: textOfClickedElement,
-      relativeCoordinates: { x: relativeX, y: relativeY },
-      screenshotUrl: screenshotUrl,
-    };
-    // TO LOCAL ARRAY
-    if (Data.length < IMAGE_LIMIT) {
-      badgeCount++;
-      // console.log("badgeCount: ", badgeCount);
-      doc.getElementById("button__badge").textContent = badgeCount;
-      doc.getElementById("button__badge").style.display = "inline-block";
-      console.log("Added to array");
-      Data.push(data);
-    } else {
-      console.log("__Reached limit__");
-      showErrorPopup(`You have reached the limit of ${IMAGE_LIMIT} images`);
-    }
+  chrome.runtime.sendMessage(
+    { action: "captureScreenshot" },
+    async (response) => {
+      if (chrome.runtime.lastError) {
+        showErrorPopup("Failed to capture screenshot. Please try again.");
+        return;
+      }
+      const { Data, badgeCount } = await getStorageData();
+      const screenshotUrl = response.screenshotUrl;
+      // chrome.runtime.sendMessage({
+      //   action: "openRenderTab",
+      //   screenshotUrl: screenshotUrl,
+      //   clickCoordinates: { x: relativeX, y: relativeY },
+      // });
+      const data = {
+        // mouseCoordinates: { x, y },
+        // pageSize: { width: pageWidth, height: pageHeight },
+        title: textOfClickedElement,
+        relativeCoordinates: { x: relativeX, y: relativeY },
+        screenshotUrl: screenshotUrl,
+      };
+      // TO LOCAL ARRAY
+      if (Data.length < IMAGE_LIMIT) {
+        // badgeCount++;
+        const newCount = badgeCount + 1;
+        Data.push(data);
+        await updateStorageData(Data, newCount);
+        // console.log("badgeCount: ", badgeCount);
+        doc.getElementById("button__badge").textContent = badgeCount;
+        doc.getElementById("button__badge").style.display = "inline-block";
+        console.log("Added to array");
+        Data.push(data);
+      } else {
+        console.log("__Reached limit__");
+        showErrorPopup(`You have reached the limit of ${IMAGE_LIMIT} images`);
+      }
 
-    // if (targetUrl) {
-    //   setTimeout(() => {
-    //     window.location.href = targetUrl;
-    //   }, 500);
-    // }
-  });
+      // if (targetUrl) {
+      //   setTimeout(() => {
+      //     window.location.href = targetUrl;
+      //   }, 500);
+      // }
+    }
+  );
 }
 
 function sendToBackend(data) {
