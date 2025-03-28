@@ -238,121 +238,44 @@ function showConfirmationPopup(
   });
 }
 
-function appendCustomDiv() {
+async function appendCustomDiv() {
   return new Promise(async (resolve, reject) => {
     if (window.self !== window.top) return;
 
-    if (iframeRef) {
-      console.log("iframeRef exists: ", iframeRef);
-      const doc = iframeRef.contentDocument || iframeRef.contentWindow.document;
-      let controlPanel = doc.getElementById("control-panel");
-
-      if (controlPanel) {
-        // Panel exists, just show it
-        controlPanel.style.display = "flex";
-        const { badgeCount } = await getStorageData();
-        if (badgeCount > 0) {
-          doc.getElementById("button__badge").textContent = badgeCount;
-          doc.getElementById("button__badge").style.display = "inline-block";
-        }
-        resolve(iframeRef);
-      } else {
-        // Panel was removed, recreate it
-        // controlPanel = createControlPanel(doc);
-        // doc.body.appendChild(controlPanel);
-        resolve(iframeRef);
-      }
-      return;
-    }
-    // if (document.getElementById("control-panel")) {
-    //   return;
-    // }
-    // Create iframe
-    const iframe = document.createElement("iframe");
-    iframe.id = "control-panel-iframe";
-    iframe.style.cssText = `
-  position: fixed;
-  bottom: 6px;
-  left: 20px;
-  width: 400px;
-  height: 50px;
-  border: none;
-  z-index: 9999;
-  border-radius: 8px;
-  background: transparent;
-`;
-    iframe.setAttribute("allowTransparency", "true");
-
-    // iframe.srcdoc = `
-    //     <html>
-    //     <head>
-    //       <style>
-    //         html, body {
-    //           margin: 0;
-    //           padding: 0;
-    //           background: none !important;
-    //         }
-    //         iframe {
-    //           background: none !important;
-    //           border: none !important;
-    //         }
-    //       </style>
-    //     </head>
-    //     <body>
-    //     </body>
-    //     </html>
-    //   `;
-
-    document.body.appendChild(iframe);
-    document.body.style.backgroundColor = "transparent"; // Ensure parent respects transparency
-
-    iframeRef = iframe;
-
-    const { badgeCount } = await getStorageData();
-    if (badgeCount > 0) {
-      doc.getElementById("button__badge").textContent = badgeCount;
-      doc.getElementById("button__badge").style.display = "inline-block";
-    }
-
-    // Wait for iframe to load
-    iframe.onload = function () {
-      console.log("Iframe loaded, attempting to append control panel...");
-
-      const doc = iframe.contentDocument || iframe.contentWindow.document;
+    // Function to create and append control panel
+    const createControlPanel = async (doc) => {
+      const { badgeCount } = await getStorageData();
 
       const controlPanelModel = doc.createElement("div");
-
       controlPanelModel.id = "control-panel";
       controlPanelModel.style.cssText = `
-      display: flex;
-      align-items: center;
-      border-radius: 8px;
-      position: fixed;
-      bottom: 0px;
-      z-index: 9999;
+        display: flex;
+        align-items: center;
+        border-radius: 8px;
+        position: fixed;
+        bottom: 0px;
+        z-index: 9999;
       `;
-      // background-color: white;
-      //   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 
+      // Create button helper function
       const createButton = (text, iconSvg) => {
         const button = doc.createElement("button");
         button.style.cssText = `
-      display: flex;
-      align-items: center;  
-      justify-content: center;
-      color:rgb(150, 150, 150);
-      background: transparent;
-      border: none;
-      cursor: pointer;
-      transition: color 0.5s;
-      padding: 11px;
-      border-radius: 8px;
-      gap: 5px;
-    `;
+          display: flex;
+          align-items: center;  
+          justify-content: center;
+          color:rgb(150, 150, 150);
+          background: transparent;
+          border: none;
+          cursor: pointer;
+          transition: color 0.5s;
+          padding: 11px;
+          border-radius: 8px;
+          gap: 5px;
+        `;
         button.onmouseover = () => {
           button.style.color = "#2d3748";
           button.style.backgroundColor = "#edf2f7";
-          // button.style.borderRadius = "8px";
         };
         button.onmouseout = () => {
           button.style.color = "rgb(150, 150, 150)";
@@ -363,109 +286,101 @@ function appendCustomDiv() {
 
         const span = doc.createElement("span");
         span.textContent = text;
-
         button.appendChild(span);
         return button;
       };
 
-      // DONE - button
+      // Create done button
       const checkIcon = doc.createElement("button");
       checkIcon.id = "done__button__id";
-
       checkIcon.style.cssText = `
-      border: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 50px;
-    height: 50px;
-    background-color: rgb(255, 89, 66);
-    border-radius: 50%;
-    margin-right: 5px;
-    position: relative;
-    color: white;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-    `;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 50px;
+        height: 50px;
+        background-color: rgb(255, 89, 66);
+        border-radius: 50%;
+        margin-right: 5px;
+        position: relative;
+        color: white;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+      `;
       checkIcon.onmouseover = () => {
         checkIcon.style.backgroundColor = "rgb(238, 48, 27)";
       };
       checkIcon.onmouseout = () => {
         checkIcon.style.backgroundColor = "rgb(255, 89, 66)";
       };
-      // checkIcon.innerText = "Done";
       checkIcon.innerHTML = `
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <polyline points="20 6 9 17 4 12"></polyline>
-  </svg>
-`;
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+      `;
 
       const badge = doc.createElement("span");
       badge.textContent = badgeCount;
       badge.className = "button__badge";
       badge.id = "button__badge";
       badge.style.cssText = `
-      background-color: #fff;
-      border-radius: 50%;
-      color: black;
-      font-size: 10px;
-      position: absolute;
-  top: 0px;
-  right: -3px;
-  min-width: 16px;
-  min-height: 16px;
-  text-align: center;
-  display: none;
-  font-weight: bold;
-  `;
+        background-color: #fff;
+        border-radius: 50%;
+        color: black;
+        font-size: 10px;
+        position: absolute;
+        top: 0px;
+        right: -3px;
+        min-width: 16px;
+        min-height: 16px;
+        text-align: center;
+        display: ${badgeCount > 0 ? "inline-block" : "none"};
+        font-weight: bold;
+      `;
 
       checkIcon.appendChild(badge);
+
+      // Create other buttons
       const pauseButton = createButton(
         "Pause",
-        `  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#969696" stroke-width="4" stroke-linecap="butt">
-    <line x1="7" y1="5" x2="7" y2="19"></line>
-    <line x1="17" y1="5" x2="17" y2="19"></line>
-</svg>
-
-  `
+        `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#969696" stroke-width="4" stroke-linecap="butt">
+          <line x1="7" y1="5" x2="7" y2="19"></line>
+          <line x1="17" y1="5" x2="17" y2="19"></line>
+        </svg>`
       );
+
       const screenshotButton = createButton(
         "Screenshot",
-        `
-        <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="20" height="20" viewBox="0,0,256,256">
-<g fill="#969696" fill-rule="nonzero" stroke="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="10" stroke-dasharray="" stroke-dashoffset="0" font-family="none" font-weight="none" font-size="none" text-anchor="none" style="mix-blend-mode: normal"><g transform="scale(10.66667,10.66667)"><path d="M4,4c-1.09306,0 -2,0.90694 -2,2v12c0,1.09306 0.90694,2 2,2h16c1.09306,0 2,-0.90694 2,-2v-12c0,-1.09306 -0.90694,-2 -2,-2zM4,6h16v12h-16zM14.5,11l-3.5,4l-2.5,-2.5l-2.72266,3.5h12.47266z"></path></g></g>
-</svg>
-      `
-      );
-      const restartButton = createButton(
-        "Restart",
-        `
-        <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="20" height="20" viewBox="0,0,256,256">
-<g fill="#969696" fill-rule="nonzero" stroke="none" stroke-width="none" stroke-linecap="butt" stroke-linejoin="none" stroke-miterlimit="10" stroke-dasharray="" stroke-dashoffset="0" font-family="none" font-weight="none" font-size="none" text-anchor="none" style="mix-blend-mode: normal"><path transform="scale(8.53333,8.53333)" d="M26.94922,14h3.05078l-4,6l-4,-6h2.95117c-0.50018,-5.06207 -4.75461,-9 -9.95117,-9c-2.4834,0 -4.74593,0.90009 -6.49414,2.39453c-0.26947,0.24712 -0.65232,0.32748 -0.99842,0.20959c-0.3461,-0.1179 -0.60027,-0.41526 -0.66286,-0.77549c-0.06258,-0.36023 0.0764,-0.7259 0.36245,-0.95363c2.09579,-1.79156 4.82437,-2.875 7.79297,-2.875c6.27784,0 11.43793,4.85166 11.94922,11zM8,16h-2.95117c0.50018,5.06207 4.75461,9 9.95117,9c2.4834,0 4.74593,-0.90009 6.49414,-2.39453c0.26947,-0.24712 0.65232,-0.32749 0.99842,-0.20959c0.3461,0.1179 0.60028,0.41526 0.66286,0.7755c0.06258,0.36023 -0.0764,0.7259 -0.36245,0.95363c-2.09579,1.79156 -4.82437,2.875 -7.79297,2.875c-6.27784,0 -11.43792,-4.85166 -11.94922,-11h-3.05078l4,-6z" id="strokeMainSVG" stroke="#969696" stroke-width="2" stroke-linejoin="round"></path><g transform="scale(8.53333,8.53333)" stroke="none" stroke-width="1" stroke-linejoin="miter"><path d="M15,3c-2.9686,0 -5.69718,1.08344 -7.79297,2.875c-0.28605,0.22772 -0.42503,0.59339 -0.36245,0.95363c0.06258,0.36023 0.31676,0.6576 0.66286,0.77549c0.3461,0.1179 0.72895,0.03753 0.99842,-0.20959c1.74821,-1.49444 4.01074,-2.39453 6.49414,-2.39453c5.19656,0 9.45099,3.93793 9.95117,9h-2.95117l4,6l4,-6h-3.05078c-0.51129,-6.14834 -5.67138,-11 -11.94922,-11zM4,10l-4,6h3.05078c0.51129,6.14834 5.67138,11 11.94922,11c2.9686,0 5.69718,-1.08344 7.79297,-2.875c0.28605,-0.22772 0.42504,-0.59339 0.36245,-0.95363c-0.06258,-0.36023 -0.31676,-0.6576 -0.66286,-0.7755c-0.3461,-0.1179 -0.72895,-0.03753 -0.99842,0.20959c-1.74821,1.49444 -4.01074,2.39453 -6.49414,2.39453c-5.19656,0 -9.45099,-3.93793 -9.95117,-9h2.95117z"></path></g></g>
-</svg>
-      `
-      );
-      const closeButton = createButton(
-        "",
-        `
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
-      `
+        `<svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="20" height="20" viewBox="0,0,256,256">
+          <g fill="#969696" fill-rule="nonzero" stroke="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="10" stroke-dasharray="" stroke-dashoffset="0" font-family="none" font-weight="none" font-size="none" text-anchor="none" style="mix-blend-mode: normal"><g transform="scale(10.66667,10.66667)"><path d="M4,4c-1.09306,0 -2,0.90694 -2,2v12c0,1.09306 0.90694,2 2,2h16c1.09306,0 2,-0.90694 2,-2v-12c0,-1.09306 -0.90694,-2 -2,-2zM4,6h16v12h-16zM14.5,11l-3.5,4l-2.5,-2.5l-2.72266,3.5h12.47266z"></path></g></g>
+        </svg>`
       );
 
+      const restartButton = createButton(
+        "Restart",
+        `<svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="20" height="20" viewBox="0,0,256,256">
+          <g fill="#969696" fill-rule="nonzero" stroke="none" stroke-width="none" stroke-linecap="butt" stroke-linejoin="none" stroke-miterlimit="10" stroke-dasharray="" stroke-dashoffset="0" font-family="none" font-weight="none" font-size="none" text-anchor="none" style="mix-blend-mode: normal"><path transform="scale(8.53333,8.53333)" d="M26.94922,14h3.05078l-4,6l-4,-6h2.95117c-0.50018,-5.06207 -4.75461,-9 -9.95117,-9c-2.4834,0 -4.74593,0.90009 -6.49414,2.39453c-0.26947,0.24712 -0.65232,0.32748 -0.99842,0.20959c-0.3461,-0.1179 -0.60027,-0.41526 -0.66286,-0.77549c-0.06258,-0.36023 0.0764,-0.7259 0.36245,-0.95363c2.09579,-1.79156 4.82437,-2.875 7.79297,-2.875c6.27784,0 11.43793,4.85166 11.94922,11zM8,16h-2.95117c0.50018,5.06207 4.75461,9 9.95117,9c2.4834,0 4.74593,-0.90009 6.49414,-2.39453c0.26947,-0.24712 0.65232,-0.32749 0.99842,-0.20959c0.3461,0.1179 0.60028,0.41526 0.66286,0.7755c0.06258,0.36023 -0.0764,0.7259 -0.36245,0.95363c-2.09579,1.79156 -4.82437,2.875 -7.79297,2.875c-6.27784,0 -11.43792,-4.85166 -11.94922,-11h-3.05078l4,-6z" id="strokeMainSVG" stroke="#969696" stroke-width="2" stroke-linejoin="round"></path><g transform="scale(8.53333,8.53333)" stroke="none" stroke-width="1" stroke-linejoin="miter"><path d="M15,3c-2.9686,0 -5.69718,1.08344 -7.79297,2.875c-0.28605,0.22772 -0.42503,0.59339 -0.36245,0.95363c0.06258,0.36023 0.31676,0.6576 0.66286,0.77549c0.3461,0.1179 0.72895,0.03753 0.99842,-0.20959c1.74821,-1.49444 4.01074,-2.39453 6.49414,-2.39453c5.19656,0 9.45099,3.93793 9.95117,9h-2.95117l4,6l4,-6h-3.05078c-0.51129,-6.14834 -5.67138,-11 -11.94922,-11zM4,10l-4,6h3.05078c0.51129,6.14834 5.67138,11 11.94922,11c2.9686,0 5.69718,-1.08344 7.79297,-2.875c0.28605,-0.22772 0.42504,-0.59339 0.36245,-0.95363c-0.06258,-0.36023 -0.31676,-0.6576 -0.66286,-0.7755c-0.3461,-0.1179 -0.72895,-0.03753 -0.99842,0.20959c-1.74821,1.49444 -4.01074,2.39453 -6.49414,2.39453c-5.19656,0 -9.45099,-3.93793 -9.95117,-9h2.95117z"></path></g></g>
+        </svg>`
+      );
+
+      const closeButton = createButton(
+        "",
+        `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>`
+      );
+
+      // Add event listeners
       checkIcon.addEventListener("click", async () => {
         disableMouseTracking();
         const { Data } = await getStorageData();
-        console.log("Data: ", Data);
         if (!Data || Data.length < 2) {
           showErrorPopup("you have to click atleast 1 or more images.");
           return;
         }
         chrome.runtime.sendMessage({ action: "fetchStatus" });
 
-        const controlPanel = doc.getElementById("control-panel");
-        // console.log("Captured Data: ", Data);
         let currUrl = window.location.href;
         currUrl = currUrl.split("://")[1] || currUrl;
         Data.push({ urlWeAreOn: currUrl });
@@ -473,25 +388,19 @@ function appendCustomDiv() {
         try {
           await sendToBackend(Data);
           await clearStorageData();
-          if (controlPanel) doc.body.removeChild(controlPanelModel);
+          controlPanelModel.remove();
         } catch (error) {
           showErrorPopup("Failed to send data to backend: " + error.message);
         }
-
-        if (controlPanel) doc.body.removeChild(controlPanelModel);
-        badgeCount = 0;
-        Data = [];
       });
 
       pauseButton.addEventListener("click", () => {
         if (isTracking) {
           customBackdrop("Paused");
           pauseButton.querySelector("span").textContent = "resume";
-          // pauseButton.textContent = "resume";
           disableMouseTracking();
         } else {
           pauseButton.querySelector("span").textContent = "Pause";
-          // pauseButton.textContent = "Pause";
           enableMouseTracking();
         }
       });
@@ -519,17 +428,13 @@ function appendCustomDiv() {
               screenshotUrl: screenshotUrl,
             };
             if (Data.length < IMAGE_LIMIT) {
-              // badgeCount++;
               const newCount = badgeCount + 1;
               Data.push(data);
               await updateStorageData(Data, newCount);
-              doc.getElementById("button__badge").textContent = badgeCount;
+              doc.getElementById("button__badge").textContent = newCount;
               doc.getElementById("button__badge").style.display =
                 "inline-block";
-              console.log("Added to array");
-              Data.push(data);
             } else {
-              console.log("__Reached limit__");
               showErrorPopup(
                 `You have reached the limit of ${IMAGE_LIMIT} images`
               );
@@ -547,8 +452,6 @@ function appendCustomDiv() {
         );
         if (confirmed) {
           customBackdrop("Restarted", 500);
-          // badgeCount = 0;
-          // Data = [];
           await clearStorageData();
           doc.getElementById("button__badge").style.display = "none";
         }
@@ -556,13 +459,6 @@ function appendCustomDiv() {
           enableMouseTracking();
         }, 500);
       });
-      // restartButton.addEventListener("click", () => {
-      //   customBackdrop("Restarted", 500);
-      //   badgeCount = 0;
-      //   Data = [];
-      //   // doc.getElementById("button__badge").textContent = badgeCount;
-      //   doc.getElementById("button__badge").style.display = "none";
-      // });
 
       closeButton.addEventListener("click", async () => {
         disableMouseTracking();
@@ -572,10 +468,7 @@ function appendCustomDiv() {
         );
         if (confirmed) {
           await clearStorageData();
-          // badgeCount = 0;
-          // Data = [];
           doc.getElementById("button__badge").style.display = "none";
-          // doc.body.removeChild(controlPanelModel);
           controlPanelModel.style.display = "none";
           disableMouseTracking();
         } else {
@@ -588,22 +481,21 @@ function appendCustomDiv() {
       const buttonsPanel = doc.createElement("div");
       buttonsPanel.id = "buttons-panel";
       buttonsPanel.style.cssText = `
-       background-color: white;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            border-radius: 0.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            width: 100%;
-            overflow: hidden;
-        `;
+        background-color: white;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border-radius: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        overflow: hidden;
+      `;
 
       controlPanelModel.appendChild(checkIcon);
       buttonsPanel.appendChild(pauseButton);
       buttonsPanel.appendChild(screenshotButton);
       buttonsPanel.appendChild(restartButton);
       buttonsPanel.appendChild(closeButton);
-
       controlPanelModel.appendChild(buttonsPanel);
 
       buttonsPanel.style.opacity = "0";
@@ -627,10 +519,62 @@ function appendCustomDiv() {
         }, 500);
       });
 
-      doc.body.appendChild(controlPanelModel);
+      return controlPanelModel;
     };
-    enableMouseTracking();
-    resolve(iframeRef);
+
+    // Check if iframe exists
+    if (iframeRef) {
+      console.log("iframeRef exists: ", iframeRef);
+      const doc = iframeRef.contentDocument || iframeRef.contentWindow.document;
+      let controlPanel = doc.getElementById("control-panel");
+
+      if (!controlPanel) {
+        // Panel doesn't exist, create it
+        controlPanel = await createControlPanel(doc);
+        doc.body.appendChild(controlPanel);
+      } else {
+        // Panel exists, just show it
+        controlPanel.style.display = "flex";
+        const { badgeCount } = await getStorageData();
+        if (badgeCount > 0) {
+          doc.getElementById("button__badge").textContent = badgeCount;
+          doc.getElementById("button__badge").style.display = "inline-block";
+        }
+      }
+
+      enableMouseTracking();
+      resolve(iframeRef);
+      return;
+    }
+
+    // If iframe doesn't exist, create it
+    const iframe = document.createElement("iframe");
+    iframe.id = "control-panel-iframe";
+    iframe.style.cssText = `
+      position: fixed;
+      bottom: 6px;
+      left: 20px;
+      width: 400px;
+      height: 50px;
+      border: none;
+      z-index: 9999;
+      border-radius: 8px;
+      background: transparent;
+    `;
+    iframe.setAttribute("allowTransparency", "true");
+
+    document.body.appendChild(iframe);
+    iframeRef = iframe;
+
+    // Wait for iframe to load
+    iframe.onload = async function () {
+      console.log("Iframe loaded, attempting to append control panel...");
+      const doc = iframe.contentDocument || iframe.contentWindow.document;
+      const controlPanel = await createControlPanel(doc);
+      doc.body.appendChild(controlPanel);
+      enableMouseTracking();
+      resolve(iframeRef);
+    };
   });
 }
 
