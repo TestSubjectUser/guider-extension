@@ -112,7 +112,11 @@ function hideLoadingBackdrop() {
   if (backdrop) backdrop.remove();
 }
 
-function showConfirmationPopup(message) {
+function showConfirmationPopup(
+  TopMessage,
+  subMessage,
+  buttonText = "Cancel Capturing"
+) {
   return new Promise((resolve) => {
     const backdrop = document.createElement("div");
     backdrop.style.cssText = `
@@ -128,62 +132,74 @@ function showConfirmationPopup(message) {
       align-items: center;
     `;
 
-    const dialog = document.createElement("div");
-    dialog.style.cssText = `
-      background: black;
-      padding: 20px;
-      border-radius: 8px;
-       background-image: repeating-linear-gradient(135deg,#f04b51,#f04b51 24px,#f2545b 0,#f2545b 48px)
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      text-align: center;
-    `;
+    const container = document.createElement("div");
+    container.style.cssText = `
+  padding: 20px;
+`;
 
-    const text = document.createElement("p");
-    text.textContent = message;
-    text.style.margin = "0 0 15px 0";
+    const heading = document.createElement("h1");
+    heading.textContent = TopMessage;
+    heading.style.cssText = `
+  width: 350px;
+  margin: 0px;
+  padding: 30px;
+  background-image: repeating-linear-gradient(135deg, #f04b51, #f04b51 24px, #f2545b 0, #f2545b 48px);
+  color: white;
+`;
 
-    const buttonContainer = document.createElement("div");
-    buttonContainer.style.display = "flex";
-    buttonContainer.style.gap = "10px";
-    buttonContainer.style.justifyContent = "center";
+    const actionContainer = document.createElement("div");
+    actionContainer.style.cssText = `
+  background: white;
+`;
 
-    const okButton = document.createElement("button");
-    okButton.textContent = "OK";
-    okButton.style.cssText = `
-      padding: 8px 16px;
-      background: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    `;
+    const subHeading = document.createElement("p");
+    subHeading.textContent = subMessage;
+    subHeading.style.cssText = `
+  margin: 0px 0px 20px 10px;
+  padding-top: 20px;
+  color: gray;
+  display: block;
+  margin-left: 10px;
+`;
 
-    const cancelButton = document.createElement("button");
-    cancelButton.textContent = "Cancel";
-    cancelButton.style.cssText = `
-      padding: 8px 16px;
-      background: #f44336;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    `;
+    const cancelBtn = document.createElement("button");
+    cancelBtn.textContent = buttonText;
+    cancelBtn.style.cssText = `
+  padding: 5px;
+  background-color: #ff7a59;
+  border: 1px solid gray;
+  border-radius: 5px;
+  margin: 10px;
+  font-size: small;
+`;
 
-    okButton.addEventListener("click", () => {
+    const notCancelBtn = document.createElement("button");
+    notCancelBtn.textContent = "Cancel";
+    notCancelBtn.style.cssText = `
+  color: black;
+  padding: 5px;
+  background-color: #eaf0f6;
+  border: 1px solid gray;
+  border-radius: 5px;
+  font-size: small;
+`;
+
+    cancelBtn.addEventListener("click", () => {
       document.body.removeChild(backdrop);
       resolve(true);
     });
 
-    cancelButton.addEventListener("click", () => {
+    notCancelBtn.addEventListener("click", () => {
       document.body.removeChild(backdrop);
       resolve(false);
     });
 
-    buttonContainer.appendChild(cancelButton);
-    buttonContainer.appendChild(okButton);
-    dialog.appendChild(text);
-    dialog.appendChild(buttonContainer);
-    backdrop.appendChild(dialog);
+    actionContainer.appendChild(subHeading);
+    actionContainer.appendChild(cancelBtn);
+    actionContainer.appendChild(notCancelBtn);
+    container.appendChild(heading);
+    container.appendChild(actionContainer);
+    backdrop.appendChild(container);
     document.body.appendChild(backdrop);
   });
 }
@@ -219,7 +235,7 @@ function appendCustomDiv() {
   position: fixed;
   bottom: 6px;
   left: 20px;
-  width: 385px;
+  width: 400px;
   height: 50px;
   border: none;
   z-index: 9999;
@@ -267,7 +283,7 @@ function appendCustomDiv() {
       align-items: center;
       border-radius: 8px;
       position: fixed;
-      bottom: 6px;
+      bottom: 0px;
       z-index: 9999;
       `;
       // background-color: white;
@@ -316,8 +332,8 @@ function appendCustomDiv() {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 40px;
-    height: 40px;
+    width: 50px;
+    height: 50px;
     background-color: rgb(255, 89, 66);
     border-radius: 50%;
     margin-right: 5px;
@@ -473,7 +489,9 @@ function appendCustomDiv() {
       restartButton.addEventListener("click", async () => {
         disableMouseTracking();
         const confirmed = await showConfirmationPopup(
-          "Are you sure you want to restart?"
+          "Restart Capturing",
+          "Are you sure you want to restart?",
+          "Restart Capturing"
         );
         if (confirmed) {
           customBackdrop("Restarted", 500);
@@ -496,6 +514,7 @@ function appendCustomDiv() {
       closeButton.addEventListener("click", async () => {
         disableMouseTracking();
         const confirmed = await showConfirmationPopup(
+          "Cancel Capturing",
           "Are you sure you want to close?"
         );
         if (confirmed) {
