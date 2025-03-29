@@ -23,5 +23,5 @@ document.getElementById("goToDashboard").addEventListener("click", () => {
 
 // TODO
 
-// - resume/pause not handled properly accross tabs.
-// - control panel doesn't appended on opening new tab.
+// - resume/pause not handled properly accross tabs. - still not functional remove that portion.
+// - control panel doesn't appended on opening new tab. - does but redirection does not happens

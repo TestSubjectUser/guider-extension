@@ -5,7 +5,43 @@ const IMAGE_LIMIT = 10;
 let isTracking = false;
 const API_URL = "http://localhost:3000";
 // const API_URL = "https://localhost:3000";
+let navigationInterceptorActive = false;
 
+function interceptLinkClicks() {
+  if (navigationInterceptorActive) return;
+  navigationInterceptorActive = true;
+
+  document.addEventListener("click", async (event) => {
+    const anchor = event.target.closest("a");
+    if (!anchor || !isTracking) return;
+
+    event.preventDefault();
+    const href = anchor.href;
+
+    // Capture screenshot before navigation
+    const { Data, badgeCount } = await getStorageData();
+    if (Data.length >= IMAGE_LIMIT) {
+      showErrorPopup(`Image limit (${IMAGE_LIMIT}) reached`);
+      return;
+    }
+
+    const response = await new Promise((resolve) => {
+      chrome.runtime.sendMessage({ action: "captureScreenshot" }, resolve);
+    });
+
+    if (response?.screenshotUrl) {
+      const newCount = badgeCount + 1;
+      Data.push({
+        title: `Navigated to ${new URL(href).hostname}`,
+        relativeCoordinates: null,
+        screenshotUrl: response.screenshotUrl,
+      });
+      await updateStorageData(Data, newCount);
+    }
+
+    window.location.href = href;
+  });
+}
 // UTILITY
 async function getStorageData() {
   return new Promise((resolve) => {
@@ -57,11 +93,14 @@ chrome.storage.onChanged.addListener((changes) => {
   //   isTracking = changes.isTracking.newValue;
   //   const doc =
   //     iframeRef?.contentDocument || iframeRef?.contentWindow?.document;
-  //   const pauseButton = doc?.querySelector("#control-panel button");
+  //   const pauseButton = doc?.getElementById("pause__button__id");
   //   if (pauseButton) {
-  //     pauseButton.querySelector("span").textContent = isTracking
+  //     pauseButton.getElementById("pause__button__id").textContent = isTracking
   //       ? "Pause"
   //       : "Resume";
+  //   }
+  //   if (isTracking) {
+  //     interceptLinkClicks();
   //   }
   // }
 });
@@ -89,11 +128,18 @@ async function initControlPanel(visible = false) {
   }
   const doc = iframeRef.contentDocument || iframeRef.contentWindow.document;
   const controlPanel = doc.getElementById("control-panel");
-  if (controlPanel) {
-    controlPanel.style.display = visible ? "flex" : "none";
-  } else {
-    console.log("Control panel not found, initControlPanel function");
-  }
+
+  chrome.storage.local.get(["isTracking"], (result) => {
+    isTracking = result.isTracking || false;
+    if (controlPanel) {
+      controlPanel.style.display = isExtensionActive ? "flex" : "none";
+    }
+  });
+  // if (controlPanel) {
+  //   controlPanel.style.display = visible ? "flex" : "none";
+  // } else {
+  //   console.log("Control panel not found, initControlPanel function");
+  // }
 }
 
 function customBackdrop(textMessage, seconds = 1000) {
@@ -402,6 +448,7 @@ async function appendCustomDiv() {
           <line x1="17" y1="5" x2="17" y2="19"></line>
         </svg>`
       );
+      pauseButton.id = "pause__button__id";
 
       const screenshotButton = createButton(
         "Screenshot",
@@ -456,6 +503,11 @@ async function appendCustomDiv() {
       pauseButton.addEventListener("click", () => {
         chrome.storage.local.set({ isTracking: !isTracking }, () => {
           customBackdrop(isTracking ? "Resumed" : "Paused");
+
+          chrome.runtime.sendMessage({
+            action: "syncTrackingState",
+            isTracking: !isTracking,
+          });
         });
         if (isTracking) {
           customBackdrop("Paused");
@@ -692,7 +744,7 @@ async function handleMouseClick(event) {
   const relativeX = (x / pageWidth) * 100;
   const relativeY = (y / pageHeight) * 100;
 
-  event.preventDefault();
+  // event.preventDefault();
 
   chrome.runtime.sendMessage(
     { action: "captureScreenshot" },
@@ -774,6 +826,17 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
     const { badgeCount } = await getStorageData();
     updateBadgeDisplay(badgeCount);
   }
+  // if (message.action === "updateTrackingState") {
+  //   isTracking = message.isTracking;
+  //   const doc =
+  //     iframeRef?.contentDocument || iframeRef?.contentWindow?.document;
+  //   const pauseButton = doc?.getElementById("pause__button__id");
+  //   if (pauseButton) {
+  //     pauseButton.getElementById("pause__button__id").textContent = isTracking
+  //       ? "Pause"
+  //       : "Resume";
+  //   }
+  // }
   if (message.action === "initControlPanel") {
     // Retry initialization if iframe isn't ready
     if (!iframeRef) {

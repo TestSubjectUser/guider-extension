@@ -112,6 +112,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
     sendResponse({ success: true });
   }
+  // if (message.action === "syncTrackingState") {
+  //   chrome.tabs.query({}, (tabs) => {
+  //     tabs.forEach((tab) => {
+  //       if (tab.id) {
+  //         chrome.tabs.sendMessage(tab.id, {
+  //           action: "updateTrackingState",
+  //           isTracking: message.isTracking,
+  //         });
+  //       }
+  //     });
+  //   });
+  // }
 
   if (message.action === "redirectToDashboard") {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -225,4 +237,20 @@ chrome.tabs.onActivated.addListener((activeInfo) => {
   chrome.tabs.sendMessage(activeInfo.tabId, {
     action: "updateBadgeFromStorage",
   });
+});
+
+chrome.webNavigation.onCompleted.addListener((details) => {
+  if (!isExtensionActive) return;
+
+  chrome.tabs.sendMessage(
+    details.tabId,
+    {
+      action: "initControlPanel",
+      visible: true,
+    },
+    () => {
+      if (chrome.runtime.lastError) {
+      }
+    }
+  );
 });
