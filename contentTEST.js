@@ -488,7 +488,7 @@ async function appendCustomDiv() {
           disableMouseTracking();
           chrome.runtime.sendMessage({
             action: "setExtensionState",
-            active: false,
+            active: false, // This triggers hideControlPanel in all tabs
           });
         } else {
           setTimeout(() => {
@@ -722,10 +722,17 @@ function formatElementText(element) {
     ? `Click on ${text.slice(0, 15).replace(/\n/g, " ")}...`
     : `Click on ${text.replace(/\n/g, " ")}`;
 }
-
 chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
   if (message.action === "initControlPanel") {
-    await initControlPanel(message.visible);
+    // Retry initialization if iframe isn't ready
+    if (!iframeRef) {
+      await appendCustomDiv();
+    }
+    const doc = iframeRef.contentDocument || iframeRef.contentWindow.document;
+    const controlPanel = doc.getElementById("control-panel");
+    if (controlPanel) {
+      controlPanel.style.display = message.visible ? "flex" : "none";
+    }
     sendResponse({ success: true });
   } else if (message.action === "updateTabTitle") {
     if (message.tabTitle) {

@@ -1,4 +1,4 @@
-// const LOCATION_ENDPOINT = "http://localhost:3000/api";
+const LOCATION_ENDPOINT = "http://localhost:3000/api";
 // const LOCATION_ENDPOINT = "https://localhost:3000/api";
 let isExtensionActive = false;
 let currentActiveTabId = null;
@@ -44,7 +44,7 @@ chrome.tabs.onCreated.addListener((tab) => {
   if (isExtensionActive) {
     chrome.tabs.sendMessage(tab.id, {
       action: "initControlPanel",
-      visible: false,
+      visible: true,
     });
   }
 });
@@ -62,17 +62,34 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "setExtensionState") {
     isExtensionActive = message.active;
+
+    // Get active tab ID safely
+    const getActiveTabId = (callback) => {
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        callback(tabs[0]?.id || null);
+      });
+    };
+
     if (isExtensionActive) {
-      currentActiveTabId = sender.tab.id;
-      // Initialize in all tabs
-      chrome.tabs.query({}, (tabs) => {
-        tabs.forEach((tab) => {
-          if (tab.id) {
-            chrome.tabs.sendMessage(tab.id, {
-              action: "initControlPanel",
-              visible: tab.id === sender.tab.id,
-            });
-          }
+      // Get ID from either sender or active tab
+      getActiveTabId((tabId) => {
+        currentActiveTabId = tabId;
+
+        // Initialize in all tabs
+        chrome.tabs.query({}, (tabs) => {
+          tabs.forEach((tab) => {
+            if (tab.id) {
+              chrome.tabs.sendMessage(
+                tab.id,
+                { action: "initControlPanel", visible: true },
+                (response) => {
+                  if (chrome.runtime.lastError) {
+                    /* Silently ignore tabs without content script */
+                  }
+                }
+              );
+            }
+          });
         });
       });
     } else {
@@ -80,9 +97,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       chrome.tabs.query({}, (tabs) => {
         tabs.forEach((tab) => {
           if (tab.id) {
-            chrome.tabs.sendMessage(tab.id, {
-              action: "hideControlPanel",
-            });
+            chrome.tabs.sendMessage(
+              tab.id,
+              { action: "hideControlPanel" },
+              (response) => {
+                if (chrome.runtime.lastError) {
+                  /* Silently ignore tabs without content script */
+                }
+              }
+            );
           }
         });
       });
