@@ -218,3 +218,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 chrome.runtime.onInstalled.addListener(() => {
   chrome.storage.local.set({ screenshotData: [], badgeCount: 0 });
 });
+
+chrome.tabs.onActivated.addListener((activeInfo) => {
+  if (!isExtensionActive) return;
+
+  chrome.tabs.sendMessage(activeInfo.tabId, {
+    action: "updateBadgeFromStorage",
+  });
+});

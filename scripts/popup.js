@@ -23,6 +23,5 @@ document.getElementById("goToDashboard").addEventListener("click", () => {
 
 // TODO
 
-// - when i click on checkIcon for submitting control panel only gets removed from current tab only not from all the tabs.
-// - when i switch to other tabs my badge does not get updated stays same, whenever i click in any tab my badge count should be updated and displayed that count in every tab.
-// - also pause button only pauses in current tab not all the tabs.
+// - resume/pause not handled properly accross tabs.
+// - control panel doesn't appended on opening new tab.

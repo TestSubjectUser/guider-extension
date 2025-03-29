@@ -34,11 +34,50 @@ async function clearStorageData() {
       {
         screenshotData: [],
         badgeCount: 0,
+        isTracking: false,
       },
       () => resolve()
     );
   });
 }
+function updateBadgeDisplay(count) {
+  const doc = iframeRef?.contentDocument || iframeRef?.contentWindow?.document;
+  const badge = doc?.getElementById("button__badge");
+  if (badge) {
+    badge.textContent = count;
+    badge.style.display = count > 0 ? "inline-block" : "none";
+  }
+}
+// storge change listner
+chrome.storage.onChanged.addListener((changes) => {
+  if (changes.badgeCount) {
+    updateBadgeDisplay(changes.badgeCount.newValue);
+  }
+  // if (changes.isTracking) {
+  //   isTracking = changes.isTracking.newValue;
+  //   const doc =
+  //     iframeRef?.contentDocument || iframeRef?.contentWindow?.document;
+  //   const pauseButton = doc?.querySelector("#control-panel button");
+  //   if (pauseButton) {
+  //     pauseButton.querySelector("span").textContent = isTracking
+  //       ? "Pause"
+  //       : "Resume";
+  //   }
+  // }
+});
+
+// function enableMouseTracking() {
+//   chrome.storage.local.set({ isTracking: true });
+// }
+// function disableMouseTracking() {
+//   chrome.storage.local.set({ isTracking: false });
+// }
+// chrome.storage.local.get(["isTracking"], (result) => {
+//   isTracking = result.isTracking || false;
+//   if (isTracking) {
+//     document.addEventListener("click", handleMouseClick);
+//   }
+// });
 
 function logTabTitle(title) {
   console.log(`Current tab title: ${title}`);
@@ -403,13 +442,21 @@ async function appendCustomDiv() {
         try {
           await sendToBackend(Data);
           await clearStorageData();
-          controlPanelModel.remove();
+          chrome.runtime.sendMessage({
+            action: "setExtensionState",
+            // hiding this pnl from tabs
+            active: false,
+          });
+          // controlPanelModel.remove();
         } catch (error) {
           showErrorPopup("Failed to send data to backend: " + error.message);
         }
       });
 
       pauseButton.addEventListener("click", () => {
+        chrome.storage.local.set({ isTracking: !isTracking }, () => {
+          customBackdrop(isTracking ? "Resumed" : "Paused");
+        });
         if (isTracking) {
           customBackdrop("Paused");
           pauseButton.querySelector("span").textContent = "resume";
@@ -723,6 +770,10 @@ function formatElementText(element) {
     : `Click on ${text.replace(/\n/g, " ")}`;
 }
 chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
+  if (message.action === "updateBadgeFromStorage") {
+    const { badgeCount } = await getStorageData();
+    updateBadgeDisplay(badgeCount);
+  }
   if (message.action === "initControlPanel") {
     // Retry initialization if iframe isn't ready
     if (!iframeRef) {
