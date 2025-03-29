@@ -356,7 +356,6 @@ async function appendCustomDiv() {
 
       checkIcon.appendChild(badge);
 
-      // Create other buttons
       const pauseButton = createButton(
         "Pause",
         `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#969696" stroke-width="4" stroke-linecap="butt">
@@ -387,7 +386,7 @@ async function appendCustomDiv() {
         </svg>`
       );
 
-      // Add event listeners
+      // btn event listeners
       checkIcon.addEventListener("click", async () => {
         disableMouseTracking();
         const { Data } = await getStorageData();
@@ -522,7 +521,6 @@ async function appendCustomDiv() {
       buttonsPanel.pointerEvents = "none";
       buttonsPanel.style.transition = "opacity 0.3s ease";
 
-      // Manage visibility on hover
       let hideTimeout;
       checkIcon.addEventListener("mouseenter", () => {
         clearTimeout(hideTimeout);
@@ -542,14 +540,12 @@ async function appendCustomDiv() {
       return controlPanelModel;
     };
 
-    // Check if iframe exists
     if (iframeRef) {
       console.log("iframeRef exists: ", iframeRef);
       const doc = iframeRef.contentDocument || iframeRef.contentWindow.document;
       let controlPanel = doc.getElementById("control-panel");
 
       if (!controlPanel) {
-        // Panel doesn't exist, create it
         controlPanel = await createControlPanel(doc);
         doc.body.appendChild(controlPanel);
       } else {
@@ -566,7 +562,6 @@ async function appendCustomDiv() {
       return;
     }
 
-    // If iframe doesn't exist, create it
     const iframe = document.createElement("iframe");
     iframe.id = "control-panel-iframe";
     iframe.style.cssText = `
@@ -585,14 +580,12 @@ async function appendCustomDiv() {
     document.body.appendChild(iframe);
     iframeRef = iframe;
 
-    // Wait for iframe to load
     iframe.onload = async function () {
       console.log("Iframe loaded, attempting to append control panel...");
       const doc = iframe.contentDocument || iframe.contentWindow.document;
       const controlPanel = await createControlPanel(doc);
       doc.body.appendChild(controlPanel);
 
-      // Initialize badge count
       const { badgeCount } = await getStorageData();
       const badge = doc.getElementById("button__badge");
       if (badge) {
@@ -607,7 +600,6 @@ async function appendCustomDiv() {
 }
 
 function showErrorPopup(errorMessage) {
-  // Remove existing popup if present
   if (document.getElementById("error-popup")) return;
 
   const popup = document.createElement("div");
@@ -632,23 +624,9 @@ function showErrorPopup(errorMessage) {
   message.textContent = errorMessage;
   message.style.flex = "1";
 
-  // const closeButton = document.createElement("button");
-  // closeButton.innerHTML = "&#10006;"; // Close (X) icon
-  // closeButton.style.cssText = `
-  //   background: none;
-  //   border: none;
-  //   color: white;
-  //   font-size: 16px;
-  //   margin-left: 10px;
-  //   cursor: pointer;
-  // `;
-  // closeButton.onclick = () => popup.remove();
-
   popup.appendChild(message);
-  // popup.appendChild(closeButton);
   document.body.appendChild(popup);
 
-  // Auto-hide after 5 seconds
   setTimeout(() => popup.remove(), 5000);
 }
 
@@ -658,29 +636,16 @@ async function handleMouseClick(event) {
 
   const controlPanel = doc.getElementById("control-panel");
   if (controlPanel?.contains(event.target)) return;
-  // if (iframeRef && iframeRef.contains(event.target)) return;
 
   let textOfClickedElement = formatElementText(event.target);
-  // console.log("Text of clicked element: ", textOfClickedElement);
-
   const x = event.clientX;
   const y = event.clientY;
-  // console.log(`Mouse clicked at coordinates: X: ${x}, Y: ${y}`);
-
   const pageWidth = window.innerWidth;
   const pageHeight = window.innerHeight;
-  // console.log(`Page size: Width: ${pageWidth}, Height: ${pageHeight}`);
-
   const relativeX = (x / pageWidth) * 100;
   const relativeY = (y / pageHeight) * 100;
-  // console.log(`Relative coordinates as percentage: X: ${relativeX}%, Y: ${relativeY}%`);
 
   event.preventDefault();
-
-  // let targetUrl = "";
-  // if (event.target.tagName === "A" && event.target.href) {
-  //   targetUrl = event.target.href;
-  // }
 
   chrome.runtime.sendMessage(
     { action: "captureScreenshot" },
@@ -691,42 +656,24 @@ async function handleMouseClick(event) {
       }
       const { Data, badgeCount } = await getStorageData();
       const screenshotUrl = response.screenshotUrl;
-      // chrome.runtime.sendMessage({
-      //   action: "openRenderTab",
-      //   screenshotUrl: screenshotUrl,
-      //   clickCoordinates: { x: relativeX, y: relativeY },
-      // });
       const data = {
-        // mouseCoordinates: { x, y },
-        // pageSize: { width: pageWidth, height: pageHeight },
         title: textOfClickedElement,
         relativeCoordinates: { x: relativeX, y: relativeY },
         screenshotUrl: screenshotUrl,
       };
-      // TO LOCAL ARRAY
       if (Data.length < IMAGE_LIMIT) {
-        // badgeCount++;
         const newCount = badgeCount + 1;
         Data.push(data);
         await updateStorageData(Data, newCount);
-        // console.log("badgeCount: ", badgeCount);
-        // Update badge in UI
         const badge = doc.getElementById("button__badge");
         if (badge) {
           badge.textContent = newCount;
           badge.style.display = "inline-block";
         }
-        // Data.push(data);
       } else {
         console.log("__Reached limit__");
         showErrorPopup(`You have reached the limit of ${IMAGE_LIMIT} images`);
       }
-
-      // if (targetUrl) {
-      //   setTimeout(() => {
-      //     window.location.href = targetUrl;
-      //   }, 500);
-      // }
     }
   );
 }
@@ -738,30 +685,20 @@ function sendToBackend(data) {
   return new Promise((resolve, reject) => {
     chrome.runtime.sendMessage({ action: "postimages", data }, (response) => {
       if (chrome.runtime.lastError) {
-        // console.error("Runtime Error:", chrome.runtime.lastError);
         hideLoadingBackdrop();
         showErrorPopup("Runtime Error: " + chrome.runtime.lastError.message);
         reject(chrome.runtime.lastError);
       } else {
-        // console.log("Response received from background.js:", response);
-        // window.location.href = API_URL + response.data.urlToVists;
-        // resolve(response);
         console.log("Response received from background.js:", response);
 
         if (response.success) {
           setTimeout(() => {
-            // window.location.href = API_URL + response.data.urlToVists;
             const newTabUrl = API_URL + response.data.urlToVists;
             window.open(newTabUrl, "_blank");
           }, 1000);
         } else {
           showErrorPopup(response.data.message);
-          // console.error(
-          //   "Error in sending data to backend:",
-          //   response.data.message
-          // );
         }
-        // TOD - ERROR POPUP
         hideLoadingBackdrop(); // Hide loading on success
         resolve(response);
       }
@@ -787,10 +724,6 @@ function formatElementText(element) {
 }
 
 chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
-  // if (!iframeRef) {
-  //   console.log("Iframe not found. Creating it now...");
-  //   await appendCustomDiv();
-  // }
   if (message.action === "initControlPanel") {
     await initControlPanel(message.visible);
     sendResponse({ success: true });
@@ -839,11 +772,6 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
       sendResponse({ success: true });
     }
   }
-
-  // if (message.action === "showDiv") {
-  //   customBackdrop("Capturing Started...");
-  //   appendCustomDiv();
-  // }
 });
 
 // Current - in screenshot collection each document carries

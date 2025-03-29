@@ -1,4 +1,4 @@
-const LOCATION_ENDPOINT = "http://localhost:3000/api";
+// const LOCATION_ENDPOINT = "http://localhost:3000/api";
 // const LOCATION_ENDPOINT = "https://localhost:3000/api";
 let isExtensionActive = false;
 let currentActiveTabId = null;
@@ -38,26 +38,6 @@ async function postData(data) {
     return { error: "Failed to send data", message: error.message };
   }
 }
-
-// chrome.tabs.onActivated.addListener((activeInfo) => {
-//   chrome.tabs.get(activeInfo.tabId, (tab) => {
-//     console.log("Active Tab:", {
-//       title: tab.title,
-//       url: tab.url,
-//       favIconUrl: tab.favIconUrl,
-//     });
-//   });
-// });
-// Track tab changes
-chrome.tabs.onActivated.addListener((activeInfo) => {
-  currentActiveTabId = activeInfo.tabId;
-  if (isExtensionActive) {
-    chrome.tabs.sendMessage(activeInfo.tabId, {
-      action: "updateTabTitle",
-      tabId: activeInfo.tabId,
-    });
-  }
-});
 
 // Handle new tab creation
 chrome.tabs.onCreated.addListener((tab) => {
@@ -190,17 +170,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // Return true to indicate response will be sent asynchronously
     return true;
   }
-  // if (message.action === "captureScreenshot") {
-  //   chrome.tabs.captureVisibleTab(null, { format: "png" }, (screenshotUrl) => {
-  //     if (chrome.runtime.lastError) {
-  //       console.error("Error capturing screenshot:", chrome.runtime.lastError);
-  //       return;
-  //     }
-  //     // Send the screenshot URL back to the content script
-  //     sendResponse({ screenshotUrl });
-  //   });
-  //   return true;
-  // }
   if (message.action === "fetchStatus") {
     console.log("Calling fetchStatus...");
     fetchStatus();
@@ -221,25 +190,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     return true; //keeps the connection open for async response
   }
-
-  // for development purposes
-  // if (message.action === "openRenderTab") {
-  //   const { screenshotUrl, clickCoordinates } = message;
-
-  //   // Open render.html in a new tab
-  //   chrome.tabs.create({ url: chrome.runtime.getURL("render.html") }, (tab) => {
-  //     // Wait for the tab to load and then send the screenshot and coordinates
-  //     chrome.tabs.onUpdated.addListener(function onUpdated(tabId, changeInfo) {
-  //       if (tabId === tab.id && changeInfo.status === "complete") {
-  //         // Send the screenshot and coordinates to the render.html page
-  //         chrome.tabs.sendMessage(tab.id, {
-  //           screenshotUrl: screenshotUrl,
-  //           clickCoordinates: clickCoordinates,
-  //         });
-  //       }
-  //     });
-  //   });
-  // }
 });
 
 chrome.runtime.onInstalled.addListener(() => {
