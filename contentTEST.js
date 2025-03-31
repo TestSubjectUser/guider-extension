@@ -109,20 +109,18 @@ chrome.storage.onChanged.addListener((changes) => {
   if (changes.badgeCount) {
     updateBadgeDisplay(changes.badgeCount.newValue);
   }
-  // if (changes.isTracking) {
-  //   isTracking = changes.isTracking.newValue;
-  //   const doc =
-  //     iframeRef?.contentDocument || iframeRef?.contentWindow?.document;
-  //   const pauseButton = doc?.getElementById("pause__button__id");
-  //   if (pauseButton) {
-  //     pauseButton.getElementById("pause__button__id").textContent = isTracking
-  //       ? "Pause"
-  //       : "Resume";
-  //   }
-  //   if (isTracking) {
-  //     interceptLinkClicks();
-  //   }
-  // }
+  if (changes.isTracking) {
+    isTracking = changes.isTracking.newValue;
+    const doc =
+      iframeRef?.contentDocument || iframeRef?.contentWindow?.document;
+    const pauseButton = doc?.getElementById("pause__button__id span");
+    if (pauseButton) {
+      pauseButton.textContent = isTracking ? "Pause" : "Resume";
+    }
+    if (isTracking) {
+      interceptLinkClicks();
+    }
+  }
 });
 
 // function enableMouseTracking() {
@@ -364,6 +362,11 @@ async function appendCustomDiv() {
   return new Promise(async (resolve, reject) => {
     if (window.self !== window.top) return;
 
+    if (document.getElementById("control-panel-iframe")) {
+      iframeRef = document.getElementById("control-panel-iframe");
+      return;
+    }
+
     const createControlPanel = async (doc) => {
       const { badgeCount } = await getStorageData();
 
@@ -523,23 +526,21 @@ async function appendCustomDiv() {
 
       pauseButton.addEventListener("click", async () => {
         const { isTracking } = await getPRAction();
-        chrome.storage.local.set({ isTracking: !isTracking }, () => {
-          customBackdrop(isTracking ? "Resumed" : "Paused");
-          console.log("setting every tabs state to: ", !isTracking);
-
-          chrome.runtime.sendMessage({
-            action: "syncTrackingState",
-            isTracking: !isTracking,
-          });
+        const newTrackingStatus = !isTracking;
+        await setPRAction(newTrackingStatus);
+        chrome.runtime.sendMessage({
+          action: "syncTrackingState",
+          isTracking: !isTracking,
         });
-        if (isTracking) {
-          customBackdrop("Paused");
-          pauseButton.querySelector("span").textContent = "resume";
-          disableMouseTracking();
-        } else {
-          pauseButton.querySelector("span").textContent = "Pause";
-          enableMouseTracking();
-        }
+        // if (isTracking) {
+        //   customBackdrop("Paused");
+        //   pauseButton.querySelector("span").textContent = "resume";
+        //   disableMouseTracking();
+        // } else {
+        //   pauseButton.querySelector("span").textContent = "Pause";
+        //   enableMouseTracking();
+        // }
+        customBackdrop(newTrackingStatus ? "Resumed" : "Paused");
       });
 
       screenshotButton.addEventListener("click", async () => {

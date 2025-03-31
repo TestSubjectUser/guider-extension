@@ -113,14 +113,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     sendResponse({ success: true });
   }
   if (message.action === "syncTrackingState") {
-    chrome.tabs.query({}, (tabs) => {
-      tabs.forEach((tab) => {
-        if (tab.id) {
-          chrome.tabs.sendMessage(tab.id, {
-            action: "updateTrackingState",
-            isTracking: message.isTracking,
-          });
-        }
+    chrome.storage.local.set({ isTracking: message.isTracking }, () => {
+      chrome.tabs.query({}, (tabs) => {
+        tabs.forEach((tab) => {
+          if (tab.id) {
+            chrome.tabs.sendMessage(tab.id, {
+              action: "updateTrackingState",
+              isTracking: message.isTracking,
+            });
+          }
+        });
       });
     });
   }
