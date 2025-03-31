@@ -112,18 +112,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
     sendResponse({ success: true });
   }
-  // if (message.action === "syncTrackingState") {
-  //   chrome.tabs.query({}, (tabs) => {
-  //     tabs.forEach((tab) => {
-  //       if (tab.id) {
-  //         chrome.tabs.sendMessage(tab.id, {
-  //           action: "updateTrackingState",
-  //           isTracking: message.isTracking,
-  //         });
-  //       }
-  //     });
-  //   });
-  // }
+  if (message.action === "syncTrackingState") {
+    chrome.tabs.query({}, (tabs) => {
+      tabs.forEach((tab) => {
+        if (tab.id) {
+          chrome.tabs.sendMessage(tab.id, {
+            action: "updateTrackingState",
+            isTracking: message.isTracking,
+          });
+        }
+      });
+    });
+  }
 
   if (message.action === "redirectToDashboard") {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -228,7 +228,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.storage.local.set({ screenshotData: [], badgeCount: 0 });
+  chrome.storage.local.set({
+    screenshotData: [],
+    badgeCount: 0,
+    isTracking: false,
+  });
 });
 
 chrome.tabs.onActivated.addListener((activeInfo) => {

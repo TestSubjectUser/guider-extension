@@ -2,7 +2,7 @@
 // let badgeCount = 0;
 let iframeRef = null;
 const IMAGE_LIMIT = 10;
-let isTracking = false;
+// let isTracking = false;
 const API_URL = "http://localhost:3000";
 // const API_URL = "https://localhost:3000";
 let navigationInterceptorActive = false;
@@ -51,6 +51,26 @@ async function getStorageData() {
         badgeCount: result.badgeCount || 0,
       });
     });
+  });
+}
+// Pause/Resume actions
+async function getPRAction() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get(["isTracking"], (result) => {
+      resolve({
+        isTracking: result.isTracking,
+      });
+    });
+  });
+}
+async function setPRAction(newTrackingStatus) {
+  return new Promise((resolve) => {
+    chrome.storage.local.set(
+      {
+        isTracking: newTrackingStatus,
+      },
+      () => resolve()
+    );
   });
 }
 async function updateStorageData(newData, newCount) {
@@ -489,6 +509,7 @@ async function appendCustomDiv() {
         try {
           await sendToBackend(Data);
           await clearStorageData();
+          await setPRAction(false);
           chrome.runtime.sendMessage({
             action: "setExtensionState",
             // hiding this pnl from tabs
@@ -500,9 +521,11 @@ async function appendCustomDiv() {
         }
       });
 
-      pauseButton.addEventListener("click", () => {
+      pauseButton.addEventListener("click", async () => {
+        const { isTracking } = await getPRAction();
         chrome.storage.local.set({ isTracking: !isTracking }, () => {
           customBackdrop(isTracking ? "Resumed" : "Paused");
+          console.log("setting every tabs state to: ", !isTracking);
 
           chrome.runtime.sendMessage({
             action: "syncTrackingState",
@@ -535,6 +558,7 @@ async function appendCustomDiv() {
               return;
             }
             const { Data, badgeCount } = await getStorageData();
+            console.log("badgeCount: ", badgeCount);
             const screenshotUrl = response.screenshotUrl;
             const data = {
               title: "",
@@ -736,6 +760,10 @@ async function handleMouseClick(event) {
   const controlPanel = doc.getElementById("control-panel");
   if (controlPanel?.contains(event.target)) return;
 
+  const { isTracking } = await getPRAction();
+  console.log("isTracking in handle mouse click: ", isTracking);
+  if (!isTracking) return;
+
   let textOfClickedElement = formatElementText(event.target);
   const x = event.clientX;
   const y = event.clientY;
@@ -805,20 +833,22 @@ function sendToBackend(data) {
   });
 }
 
-function enableMouseTracking() {
-  isTracking = true;
+async function enableMouseTracking() {
+  // isTracking = true;
+  await setPRAction(true);
   document.addEventListener("click", handleMouseClick);
 }
 
-function disableMouseTracking() {
-  isTracking = false;
+async function disableMouseTracking() {
+  // isTracking = false;
+  await setPRAction(false);
   document.removeEventListener("click", handleMouseClick);
 }
 
 function formatElementText(element) {
   let text = element.innerText || element.textContent || "highlighted area";
-  return text.length > 15
-    ? `Click on ${text.slice(0, 15).replace(/\n/g, " ")}...`
+  return text.length > 16
+    ? `Click on ${text.slice(0, 16).replace(/\n/g, " ")}...`
     : `Click on ${text.replace(/\n/g, " ")}`;
 }
 chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
@@ -826,17 +856,15 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
     const { badgeCount } = await getStorageData();
     updateBadgeDisplay(badgeCount);
   }
-  // if (message.action === "updateTrackingState") {
-  //   isTracking = message.isTracking;
-  //   const doc =
-  //     iframeRef?.contentDocument || iframeRef?.contentWindow?.document;
-  //   const pauseButton = doc?.getElementById("pause__button__id");
-  //   if (pauseButton) {
-  //     pauseButton.getElementById("pause__button__id").textContent = isTracking
-  //       ? "Pause"
-  //       : "Resume";
-  //   }
-  // }
+  if (message.action === "updateTrackingState") {
+    const isTracking = message.isTracking;
+    const doc =
+      iframeRef?.contentDocument || iframeRef?.contentWindow?.document;
+    const pauseButton = doc?.querySelector("#pause__button__id span");
+    if (pauseButton) {
+      pauseButton.textContent = isTracking ? "Pause" : "Resume";
+    }
+  }
   if (message.action === "initControlPanel") {
     // Retry initialization if iframe isn't ready
     if (!iframeRef) {

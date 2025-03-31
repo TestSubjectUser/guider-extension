@@ -23,5 +23,7 @@ document.getElementById("goToDashboard").addEventListener("click", () => {
 
 // TODO
 
-// - resume/pause not handled properly accross tabs. - still not functional remove that portion.
-// - control panel doesn't appended on opening new tab. - does but redirection does not happens
+// - resume/pause not handled properly accross tabs. - still not functional removed that portion. DONE,
+// - new ISSUE in pause/resume - if i pause from one tab i have to click resume in that tab again otherwise works but, where i paused is still in paused state.
+// - new tab also gets isTracking as true
+// - on reload control panel disappears in some cases, or on navigation from one page in prev page control-panel gets removed.
