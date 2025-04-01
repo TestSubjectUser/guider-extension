@@ -79,6 +79,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         chrome.tabs.query({}, (tabs) => {
           tabs.forEach((tab) => {
             if (tab.id) {
+              chrome.scripting.executeScript({
+                target: { tabId: tab.id },
+                files: ["contentTEST.js"],
+              });
               chrome.tabs.sendMessage(
                 tab.id,
                 { action: "initControlPanel", visible: true },
@@ -240,9 +244,14 @@ chrome.runtime.onInstalled.addListener(() => {
 chrome.tabs.onActivated.addListener((activeInfo) => {
   if (!isExtensionActive) return;
 
+  // Force re-initialization when switching tabs
   chrome.tabs.sendMessage(activeInfo.tabId, {
-    action: "updateBadgeFromStorage",
+    action: "initControlPanel",
+    visible: true,
   });
+  // chrome.tabs.sendMessage(activeInfo.tabId, {
+  //   action: "updateBadgeFromStorage",
+  // });
 });
 
 chrome.webNavigation.onCompleted.addListener((details) => {

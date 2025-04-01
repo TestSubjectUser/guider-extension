@@ -17,27 +17,22 @@ function interceptLinkClicks() {
 
     event.preventDefault();
     const href = anchor.href;
+    const title = anchor.textContent.trim() || new URL(href).hostname;
 
-    // Capture screenshot before navigation
     const { Data, badgeCount } = await getStorageData();
     if (Data.length >= IMAGE_LIMIT) {
-      showErrorPopup(`Image limit (${IMAGE_LIMIT}) reached`);
+      showErrorPopup(`Navigation limit (${IMAGE_LIMIT}) reached`);
       return;
     }
 
-    const response = await new Promise((resolve) => {
-      chrome.runtime.sendMessage({ action: "captureScreenshot" }, resolve);
+    const newCount = badgeCount + 1;
+    Data.push({
+      title: `Navigated to ${title}`,
+      description: href,
+      relativeCoordinates: null,
+      screenshotUrl: null,
     });
-
-    if (response?.screenshotUrl) {
-      const newCount = badgeCount + 1;
-      Data.push({
-        title: `Navigated to ${new URL(href).hostname}`,
-        relativeCoordinates: null,
-        screenshotUrl: response.screenshotUrl,
-      });
-      await updateStorageData(Data, newCount);
-    }
+    await updateStorageData(Data, newCount);
 
     window.location.href = href;
   });
@@ -140,25 +135,25 @@ function logTabTitle(title) {
   console.log(`Current tab title: ${title}`);
 }
 
-async function initControlPanel(visible = false) {
-  if (!iframeRef) {
-    await appendCustomDiv();
-  }
-  const doc = iframeRef.contentDocument || iframeRef.contentWindow.document;
-  const controlPanel = doc.getElementById("control-panel");
+// async function initControlPanel() {
+//   if (!iframeRef) {
+//     await appendCustomDiv();
+//   }
+//   const doc = iframeRef.contentDocument || iframeRef.contentWindow.document;
+//   const controlPanel = doc.getElementById("control-panel");
 
-  chrome.storage.local.get(["isTracking"], (result) => {
-    isTracking = result.isTracking || false;
-    if (controlPanel) {
-      controlPanel.style.display = isExtensionActive ? "flex" : "none";
-    }
-  });
-  // if (controlPanel) {
-  //   controlPanel.style.display = visible ? "flex" : "none";
-  // } else {
-  //   console.log("Control panel not found, initControlPanel function");
-  // }
-}
+//   chrome.storage.local.get(["isTracking"], (result) => {
+//     isTracking = result.isTracking || false;
+//     if (controlPanel) {
+//       controlPanel.style.display = isExtensionActive ? "flex" : "none";
+//     }
+//   });
+//   // if (controlPanel) {
+//   //   controlPanel.style.display = visible ? "flex" : "none";
+//   // } else {
+//   //   console.log("Control panel not found, initControlPanel function");
+//   // }
+// }
 
 function customBackdrop(textMessage, seconds = 1000) {
   if (document.getElementById("custom-backdrop")) return;
@@ -856,6 +851,9 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
   if (message.action === "updateBadgeFromStorage") {
     const { badgeCount } = await getStorageData();
     updateBadgeDisplay(badgeCount);
+
+    const { isTracking } = await getPRAction();
+    await setPRAction(isTracking);
   }
   if (message.action === "updateTrackingState") {
     const isTracking = message.isTracking;
@@ -873,9 +871,14 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
     }
     const doc = iframeRef.contentDocument || iframeRef.contentWindow.document;
     const controlPanel = doc.getElementById("control-panel");
+
+    // chrome.storage.local.get(["isTracking"], (result) => {
+    //   isTracking = result.isTracking || false;
     if (controlPanel) {
       controlPanel.style.display = message.visible ? "flex" : "none";
     }
+    // });
+
     sendResponse({ success: true });
   } else if (message.action === "updateTabTitle") {
     if (message.tabTitle) {

@@ -114,3 +114,162 @@ files: ['content.js']
 });
 });
 });
+
+BACKGROUND EVENTS:
+
+1. chrome.tabs.onCreated.addListener
+   When: A new tab is created (e.g., opening a new tab or window).
+
+Use Case: Initialize UI or logic when a tab is created.
+
+Example:
+
+javascript
+Copy
+chrome.tabs.onCreated.addListener((tab) => {
+console.log("New tab created with ID:", tab.id);
+}); 2. chrome.tabs.onUpdated.addListener
+When: A tab’s properties change (e.g., URL, title, favicon, or loading status).
+
+Parameters:
+
+tabId: ID of the updated tab.
+
+changeInfo: Object describing changes (e.g., {status: "loading"} or {url: "..."}).
+
+tab: Full Tab object.
+
+Use Case: Track page navigation or update UI when a tab loads.
+
+Example:
+
+javascript
+Copy
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+if (changeInfo.status === "complete") {
+console.log("Tab finished loading:", tab.url);
+}
+}); 3. chrome.runtime.onMessage.addListener
+When: A message is sent to the background script (e.g., from a content script or popup).
+
+Use Case: Handle cross-component communication (e.g., sending data between content scripts and the background script).
+
+Example:
+
+javascript
+Copy
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+if (message.action === "fetchData") {
+fetchData().then(sendResponse);
+return true; // Required for async responses
+}
+}); 4. chrome.runtime.onInstalled.addListener
+When: The extension is first installed, updated, or Chrome is updated.
+
+Use Case: Initialize default storage values or perform one-time setup.
+
+Example:
+
+javascript
+Copy
+chrome.runtime.onInstalled.addListener(() => {
+chrome.storage.local.set({ isEnabled: true });
+}); 5. chrome.tabs.onActivated.addListener
+When: The user switches focus to a different tab.
+
+Parameters:
+
+activeInfo: Contains tabId (the new active tab) and windowId.
+
+Use Case: Update UI or logic based on the active tab.
+
+Example:
+
+javascript
+Copy
+chrome.tabs.onActivated.addListener((activeInfo) => {
+console.log("Active tab changed to:", activeInfo.tabId);
+}); 6. chrome.webNavigation.onCompleted.addListener
+When: A navigation event in a tab finishes fully loading (including iframes).
+
+Parameters:
+
+details: Includes tabId, url, and frame info.
+
+Use Case: Trigger actions after a page fully loads (e.g., injecting scripts).
+
+Example:
+
+javascript
+Copy
+chrome.webNavigation.onCompleted.addListener((details) => {
+if (details.frameId === 0) { // Main frame only
+console.log("Main page loaded:", details.url);
+}
+});
+Key Differences:
+onUpdated vs. onCompleted:
+
+onUpdated fires for partial changes (e.g., loading progress).
+
+onCompleted fires only after the entire page (including resources) finishes loading.
+
+Permissions Required:
+
+webNavigation requires the "webNavigation" permission in manifest.json.
+
+tabs events require the "tabs" permission.
+
+Let me know if you need further clarification! 🚀
+
+```
+
+┌──────────────────────────┐          ┌────────────────────────┐
+│      Content Script      │          │     Background         │
+│ (Injected into pages)    │          │      (Service Worker)  │
+├──────────────────────────┤          ├────────────────────────┤
+│ 1. Control Panel         │          │ 1. Message Hub         │
+│    - Pause/Resume        │          │    - Listens for:      │
+│    - Screenshot          │──────────▶   - "captureScreenshot"│
+│    - Restart/Close       │          │   - "syncTrackingState"│
+│                          │          │   - "postimages"       │
+│ 2. Tracks Clicks         │          │                        │
+│    (via handleMouseClick)│          │ 2. Tab Management      │
+│                          │          │   - onCreated          │
+│ 3. Injects iframe UI     │          │   - onUpdated          │
+│    (appendCustomDiv)     │          │   - onActivated        │
+└──────────▲───────────────┘          │   - webNavigation      │
+           │                          └──────────▲─────────────┘
+           │                                     │
+           │                             ┌───────┴─────────┐
+           │                             │    Server       │
+           │                             │ (Localhost:3000)│
+           │                             │                 │
+           │                             └───────▲─────────┘
+           │                                     │
+           │                          ┌──────────┴──────────┐
+           └──────────────────────────┤    chrome.storage   │
+                                      │ (Syncs isTracking,  │
+                                      │  badgeCount, etc.)  │
+                                      └─────────────────────┘
+
+Key Interactions:
+────────────────────────────────────────────────────────────
+A. User Interaction Flow (Content Script → Background):
+   1. Click "Pause" → sendMessage("syncTrackingState")
+   2. Click "Screenshot" → sendMessage("captureScreenshot")
+   3. Click "Done" → sendMessage("postimages")
+
+B. Background → Content Script:
+   1. On tab change → sendMessage("initControlPanel")
+   2. On tracking state change → sendMessage("updateTrackingState")
+
+C. Storage Sync:
+   1. chrome.storage.local updates → chrome.storage.onChanged
+   2. Propagates state (isTracking/badgeCount) to all tabs
+
+D. Server Communication:
+   1. Background script handles POST/FETCH to localhost:3000
+   2. Returns response to content script via messages
+
+```

@@ -23,4 +23,4 @@ document.getElementById("goToDashboard").addEventListener("click", () => {
 
 // TODO
 
-// - new tab also gets isTracking as true
+// - remove unneccessory code from background and content scripts which serves no perpose.
