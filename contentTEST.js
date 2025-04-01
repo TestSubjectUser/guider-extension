@@ -1,42 +1,37 @@
-// let Data = [];
-// let badgeCount = 0;
 let iframeRef = null;
 const IMAGE_LIMIT = 10;
-// let isTracking = false;
 const API_URL = "http://localhost:3000";
-// const API_URL = "https://localhost:3000";
-let navigationInterceptorActive = false;
 
-function interceptLinkClicks() {
-  if (navigationInterceptorActive) return;
-  navigationInterceptorActive = true;
+// function interceptLinkClicks() {
+//   if (navigationInterceptorActive) return;
+//   navigationInterceptorActive = true;
 
-  document.addEventListener("click", async (event) => {
-    const anchor = event.target.closest("a");
-    if (!anchor || !isTracking) return;
+//   document.addEventListener("click", async (event) => {
+//     const anchor = event.target.closest("a");
+//     if (!anchor || !isTracking) return;
 
-    event.preventDefault();
-    const href = anchor.href;
-    const title = anchor.textContent.trim() || new URL(href).hostname;
+//     event.preventDefault();
+//     const href = anchor.href;
+//     const title = anchor.textContent.trim() || new URL(href).hostname;
 
-    const { Data, badgeCount } = await getStorageData();
-    if (Data.length >= IMAGE_LIMIT) {
-      showErrorPopup(`Navigation limit (${IMAGE_LIMIT}) reached`);
-      return;
-    }
+//     const { Data, badgeCount } = await getStorageData();
+//     if (Data.length >= IMAGE_LIMIT) {
+//       showErrorPopup(`Navigation limit (${IMAGE_LIMIT}) reached`);
+//       return;
+//     }
 
-    const newCount = badgeCount + 1;
-    Data.push({
-      title: `Navigated to ${title}`,
-      description: href,
-      relativeCoordinates: null,
-      screenshotUrl: null,
-    });
-    await updateStorageData(Data, newCount);
+//     const newCount = badgeCount + 1;
+//     Data.push({
+//       title: `Navigated to ${title}`,
+//       description: href,
+//       relativeCoordinates: null,
+//       screenshotUrl: null,
+//     });
+//     await updateStorageData(Data, newCount);
 
-    window.location.href = href;
-  });
-}
+//     window.location.href = href;
+//   });
+// }
 // UTILITY
 async function getStorageData() {
   return new Promise((resolve) => {
@@ -112,48 +107,15 @@ chrome.storage.onChanged.addListener((changes) => {
     if (pauseButton) {
       pauseButton.textContent = isTracking ? "Pause" : "Resume";
     }
-    if (isTracking) {
-      interceptLinkClicks();
-    }
+    // if (isTracking) {
+    //   interceptLinkClicks();
+    // }
   }
 });
-
-// function enableMouseTracking() {
-//   chrome.storage.local.set({ isTracking: true });
-// }
-// function disableMouseTracking() {
-//   chrome.storage.local.set({ isTracking: false });
-// }
-// chrome.storage.local.get(["isTracking"], (result) => {
-//   isTracking = result.isTracking || false;
-//   if (isTracking) {
-//     document.addEventListener("click", handleMouseClick);
-//   }
-// });
 
 function logTabTitle(title) {
   console.log(`Current tab title: ${title}`);
 }
-
-// async function initControlPanel() {
-//   if (!iframeRef) {
-//     await appendCustomDiv();
-//   }
-//   const doc = iframeRef.contentDocument || iframeRef.contentWindow.document;
-//   const controlPanel = doc.getElementById("control-panel");
-
-//   chrome.storage.local.get(["isTracking"], (result) => {
-//     isTracking = result.isTracking || false;
-//     if (controlPanel) {
-//       controlPanel.style.display = isExtensionActive ? "flex" : "none";
-//     }
-//   });
-//   // if (controlPanel) {
-//   //   controlPanel.style.display = visible ? "flex" : "none";
-//   // } else {
-//   //   console.log("Control panel not found, initControlPanel function");
-//   // }
-// }
 
 function customBackdrop(textMessage, seconds = 1000) {
   if (document.getElementById("custom-backdrop")) return;
@@ -502,7 +464,7 @@ async function appendCustomDiv() {
 
         let currUrl = window.location.href;
         currUrl = currUrl.split("://")[1] || currUrl;
-        Data.push({ urlWeAreOn: currUrl });
+        // Data.push({ urlWeAreOn: currUrl });
 
         try {
           await sendToBackend(Data);
@@ -555,11 +517,12 @@ async function appendCustomDiv() {
             }
             const { Data, badgeCount } = await getStorageData();
             console.log("badgeCount: ", badgeCount);
-            const screenshotUrl = response.screenshotUrl;
+            const { screenshotUrl, tabTitle } = response;
             const data = {
               title: "",
               relativeCoordinates: null,
-              screenshotUrl: screenshotUrl,
+              screenshotUrl,
+              tabTitle,
             };
             if (Data.length < IMAGE_LIMIT) {
               const newCount = badgeCount + 1;
@@ -778,11 +741,12 @@ async function handleMouseClick(event) {
         return;
       }
       const { Data, badgeCount } = await getStorageData();
-      const screenshotUrl = response.screenshotUrl;
+      const { screenshotUrl, tabTitle } = response;
       const data = {
         title: textOfClickedElement,
         relativeCoordinates: { x: relativeX, y: relativeY },
-        screenshotUrl: screenshotUrl,
+        screenshotUrl,
+        tabTitle,
       };
       if (Data.length < IMAGE_LIMIT) {
         const newCount = badgeCount + 1;
@@ -879,17 +843,6 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
     }
     // });
 
-    sendResponse({ success: true });
-  } else if (message.action === "updateTabTitle") {
-    if (message.tabTitle) {
-      logTabTitle(message.tabTitle);
-    } else {
-      chrome.runtime.sendMessage({ action: "getTabTitle" }, (response) => {
-        if (response.tabTitle) {
-          logTabTitle(response.tabTitle);
-        }
-      });
-    }
     sendResponse({ success: true });
   }
 

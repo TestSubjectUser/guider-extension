@@ -1,5 +1,4 @@
 const LOCATION_ENDPOINT = "http://localhost:3000/api";
-// const LOCATION_ENDPOINT = "https://localhost:3000/api";
 let isExtensionActive = false;
 let currentActiveTabId = null;
 
@@ -45,16 +44,6 @@ chrome.tabs.onCreated.addListener((tab) => {
     chrome.tabs.sendMessage(tab.id, {
       action: "initControlPanel",
       visible: true,
-    });
-  }
-});
-
-// Update tab title when it changes
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (isExtensionActive && changeInfo.title && tabId === currentActiveTabId) {
-    chrome.tabs.sendMessage(tabId, {
-      action: "updateTabTitle",
-      tabTitle: tab.title,
     });
   }
 });
@@ -142,10 +131,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
   if (message.action === "captureScreenshot") {
     // ask to hide
+    // pass tab title from here
     chrome.tabs.sendMessage(
       sender.tab.id,
       { action: "hideControlPanel" },
       () => {
+        // console.log("tab title: ", sender.tab.title);
+        const tabTitle = sender.tab.title;
         chrome.tabs.captureVisibleTab(
           null,
           { format: "png" },
@@ -164,7 +156,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               });
             }, 300);
             // Send the screenshot URL back to the content script
-            sendResponse({ screenshotUrl });
+            sendResponse({ screenshotUrl, tabTitle });
           }
         );
       }
