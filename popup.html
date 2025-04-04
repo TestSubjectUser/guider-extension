@@ -59,6 +59,31 @@
       .button-primary:hover {
         background-color: rgb(238, 48, 27);
       }
+      #stopDivButton {
+        width: 100%;
+        background-color: #dc3545;
+        color: white;
+        padding: 12px;
+        border: none;
+        border-radius: 4px;
+        margin-bottom: 8px;
+        cursor: pointer;
+        font-size: 16px;
+      }
+      #stopDivButton:hover {
+        background-color: #bb2d3b;
+      }
+
+      @keyframes fadeInOut {
+        0%,
+        100% {
+          opacity: 0;
+        }
+        15%,
+        85% {
+          opacity: 1;
+        }
+      }
       .button-secondary {
         width: 100%;
         background-color: transparent;
@@ -87,6 +112,9 @@
         can add the finishing touches and share it.
       </p>
       <button id="showDivButton" class="button-primary">Start capturing</button>
+      <!-- <button id="stopDivButton" class="button-danger" style="display: none">
+        Stop Capturing
+      </button> -->
       <button class="button-secondary" id="goToDashboard">
         Go to dashboard
       </button>

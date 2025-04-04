@@ -2,20 +2,7 @@ const LOCATION_ENDPOINT = "http://localhost:3000/api";
 let isExtensionActive = false;
 let currentActiveTabId = null;
 
-console.log("Background script is running...");
-function fetchStatus() {
-  console.log("fetchStatus called...");
-  fetch(LOCATION_ENDPOINT)
-    .then((data) => {
-      console.log("data: ", data);
-    })
-    .catch((error) => {
-      console.error("Fetch error: ", error);
-    });
-}
-
 async function postData(data) {
-  console.log("sending image data...");
   try {
     const response = await fetch(`${LOCATION_ENDPOINT}/save-screenshot`, {
       method: "POST",
@@ -29,16 +16,13 @@ async function postData(data) {
         resData.error || `HTTP error! Status: ${response.status}`
       );
     }
-    console.log("resData: ", resData);
 
     return resData;
   } catch (error) {
-    console.error("Error:", error);
-    return { error: "Failed to send data", message: error.message };
+    return { error: error, message: "Failed to send data" };
   }
 }
 
-// Handle new tab creation
 chrome.tabs.onCreated.addListener((tab) => {
   if (isExtensionActive) {
     chrome.tabs.sendMessage(tab.id, {
@@ -51,8 +35,8 @@ chrome.tabs.onCreated.addListener((tab) => {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "setExtensionState") {
     isExtensionActive = message.active;
+    chrome.storage.local.set({ isExtensionActive: isExtensionActive });
 
-    // Get active tab ID safely
     const getActiveTabId = (callback) => {
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         callback(tabs[0]?.id || null);
@@ -60,24 +44,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     };
 
     if (isExtensionActive) {
-      // Get ID from either sender or active tab
       getActiveTabId((tabId) => {
         currentActiveTabId = tabId;
 
-        // Initialize in all tabs
         chrome.tabs.query({}, (tabs) => {
           tabs.forEach((tab) => {
             if (tab.id) {
-              chrome.scripting.executeScript({
-                target: { tabId: tab.id },
-                files: ["contentTEST.js"],
-              });
+              // chrome.scripting.executeScript({
+              //   target: { tabId: tab.id },
+              //   files: ["scripts/content.js"],
+              // });
               chrome.tabs.sendMessage(
                 tab.id,
                 { action: "initControlPanel", visible: true },
                 (response) => {
                   if (chrome.runtime.lastError) {
-                    /* Silently ignore tabs without content script */
                   }
                 }
               );
@@ -130,13 +111,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     });
   }
   if (message.action === "captureScreenshot") {
-    // ask to hide
-    // pass tab title from here
     chrome.tabs.sendMessage(
       sender.tab.id,
       { action: "hideControlPanel" },
       () => {
-        // console.log("tab title: ", sender.tab.title);
         const tabTitle = sender.tab.title;
         chrome.tabs.captureVisibleTab(
           null,
@@ -149,13 +127,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               );
               return;
             }
-            // restore control panel by asking to content scr
             setTimeout(() => {
               chrome.tabs.sendMessage(sender.tab.id, {
                 action: "showControlPanel",
               });
             }, 300);
-            // Send the screenshot URL back to the content script
             sendResponse({ screenshotUrl, tabTitle });
           }
         );
@@ -196,16 +172,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           sendResponse({ success: true });
         }
       );
-
-      // add step after download
     });
-
-    // Return true to indicate response will be sent asynchronously
     return true;
-  }
-  if (message.action === "fetchStatus") {
-    console.log("Calling fetchStatus...");
-    fetchStatus();
   }
   if (message.action === "postimages") {
     console.log("Calling postimages...");
@@ -217,11 +185,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse({ success: true, data: response });
       })
       .catch((error) => {
-        console.error("Error in postData:", error);
         sendResponse({ success: false, error: error.message });
       });
 
-    return true; //keeps the connection open for async response
+    return true;
   }
 });
 
@@ -236,14 +203,10 @@ chrome.runtime.onInstalled.addListener(() => {
 chrome.tabs.onActivated.addListener((activeInfo) => {
   if (!isExtensionActive) return;
 
-  // Force re-initialization when switching tabs
   chrome.tabs.sendMessage(activeInfo.tabId, {
     action: "initControlPanel",
     visible: true,
   });
-  // chrome.tabs.sendMessage(activeInfo.tabId, {
-  //   action: "updateBadgeFromStorage",
-  // });
 });
 
 chrome.webNavigation.onCompleted.addListener((details) => {
