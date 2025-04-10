@@ -818,6 +818,23 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
     sendResponse({ success: true });
     await appendCustomDiv();
   }
+  if (message.action === "resetStateAndHide") {
+    await clearStorageData();
+    const doc =
+      iframeRef?.contentDocument || iframeRef?.contentWindow?.document;
+    const badge = doc?.getElementById("button__badge");
+    if (badge) badge.style.display = "none";
+
+    const controlPanel = doc?.getElementById("control-panel");
+    if (controlPanel) controlPanel.style.display = "none";
+
+    await disableMouseTracking();
+  }
+
+  // if(message.action === "showStopConfirmation"){
+  //   const response = await showConfirmationPopup("Stop Tracking", "Are you sure you want to stop tracking?", "Stop Tracking")
+  //   sendResponse(response);
+  // }
   if (iframeRef) {
     const doc = iframeRef.contentDocument || iframeRef.contentWindow.document;
     if (!doc) {

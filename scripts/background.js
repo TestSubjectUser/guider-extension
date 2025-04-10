@@ -76,7 +76,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               { action: "hideControlPanel" },
               (response) => {
                 if (chrome.runtime.lastError) {
-                  /* Silently ignore tabs without content script */
                 }
               }
             );
@@ -100,7 +99,27 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       });
     });
   }
-
+  if (message.action === "clearTrackingAndStop") {
+    isExtensionActive = false;
+    chrome.storage.local.set(
+      {
+        isExtensionActive: false,
+        isTracking: false,
+        screenshotData: [],
+        badgeCount: 0,
+      },
+      () => {
+        chrome.tabs.query({}, (tabs) => {
+          tabs.forEach((tab) => {
+            chrome.tabs.sendMessage(tab.id, {
+              action: "resetStateAndHide",
+            });
+          });
+        });
+      }
+    );
+    sendResponse({ success: true });
+  }
   if (message.action === "redirectToDashboard") {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (tabs.length > 0 && tabs[0].id) {
